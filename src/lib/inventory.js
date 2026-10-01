@@ -4,7 +4,7 @@
 export const LOW_STOCK_THRESHOLD = 5;
 
 export function formatSoM(value) {
-  return new Intl.NumberFormat("en-US").format(Math.round(Number(value) || 0));
+  return new Intl.NumberFormat("en-US").format(Math.round(Number(value) || 0)).replace(/,/g, " ");
 }
 
 export function parsePrice(value) {

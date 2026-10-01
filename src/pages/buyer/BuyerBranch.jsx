@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { MapPin, Phone, Clock, Navigation2, AlertCircle } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
@@ -12,6 +12,7 @@ import { Package } from "lucide-react";
 
 export default function BuyerBranch() {
   const { branchId } = useParams();
+  const navigate = useNavigate();
   const [branch, setBranch] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -45,6 +46,9 @@ export default function BuyerBranch() {
         ))}
       </div>
       {branch.latitude && branch.longitude && <MapView branches={[branch]} />}
+      {branch.is_active && (
+        <SecondaryButton className="h-12 w-full" onClick={() => navigate(`/branch/${branchId}/products`)}><Package className="mr-1.5 h-4 w-4" />Mahsulotlarni ko'rish</SecondaryButton>
+      )}
       <PrimaryButton className="h-12 w-full" onClick={() => openInMaps(branch.latitude, branch.longitude, branch.name)}><Navigation2 className="mr-1.5 h-4 w-4" />Xaritada ochish</PrimaryButton>
     </div>
   );

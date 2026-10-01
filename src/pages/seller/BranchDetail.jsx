@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { MapPin, Phone, Clock, Navigation2, Pencil } from "lucide-react";
+import { MapPin, Phone, Clock, Navigation2, Pencil, Package } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import StatusBadge from "@/components/vimi/StatusBadge";
 import MapView from "@/components/vimi/MapView";
@@ -62,6 +62,9 @@ export default function BranchDetail() {
         </div>
       </div>
       {branch.latitude && branch.longitude && <MapView branches={[branch]} />}
+      {branch.is_active && (
+        <SecondaryButton className="h-12 w-full" onClick={() => navigate(`/seller/businesses/${id}/branches/${branchId}/inventory`)}><Package className="mr-1.5 h-4 w-4" />Inventarni boshqarish</SecondaryButton>
+      )}
       <div className="flex gap-3">
         <SecondaryButton className="h-12 flex-1" onClick={() => openInMaps(branch.latitude, branch.longitude, branch.name)}><Navigation2 className="mr-1.5 h-4 w-4" />Xaritada ochish</SecondaryButton>
         <SecondaryButton className="h-12 flex-1" onClick={() => setConfirm(true)} disabled={saving}>{branch.is_active ? "Faolsizlantirish" : "Faollashtirish"}</SecondaryButton>

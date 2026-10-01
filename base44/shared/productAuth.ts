@@ -5,7 +5,9 @@
 // inlined here (kept in sync with branchAuth.ts).
 
 export async function getOwnedBusiness(base44, businessId, userId) {
-  const business = await base44.asServiceRole.entities.Business.get(businessId);
+  let business;
+  try { business = await base44.asServiceRole.entities.Business.get(businessId); }
+  catch (e) { business = null; }
   if (!business || business.created_by_id !== userId) {
     const err = new Error("Biznes topilmadi yoki ruxsat yo'q");
     err.status = 403;

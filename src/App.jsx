@@ -17,7 +17,14 @@ import BuyerOrders from '@/pages/buyer/Orders';
 import BuyerProfile from '@/pages/buyer/Profile';
 import SellerHome from '@/pages/seller/Home';
 import SellerProducts from '@/pages/seller/Products';
+import ProductCreate from '@/pages/seller/ProductCreate';
+import ProductDetailSeller from '@/pages/seller/ProductDetail';
+import ProductEdit from '@/pages/seller/ProductEdit';
+import SellerCategories from '@/pages/seller/Categories';
+import SellerBranchInventory from '@/pages/seller/BranchInventory';
 import SellerProfile from '@/pages/seller/Profile';
+import BuyerBranchProducts from '@/pages/buyer/BranchProducts';
+import BuyerProductDetail from '@/pages/buyer/ProductDetail';
 import BusinessCreate from '@/pages/seller/BusinessCreate';
 import BusinessProfile from '@/pages/seller/BusinessProfile';
 import BranchCreate from '@/pages/seller/BranchCreate';
@@ -63,6 +70,8 @@ const AuthenticatedApp = () => {
             <Route path="/" element={<BuyerHome />} />
             <Route path="/store/:storeId" element={<Store />} />
             <Route path="/branch/:branchId" element={<BuyerBranch />} />
+            <Route path="/branch/:branchId/products" element={<BuyerBranchProducts />} />
+            <Route path="/branch/:branchId/products/:productId" element={<BuyerProductDetail />} />
             <Route path="/orders" element={<BuyerOrders />} />
             <Route path="/profile" element={<BuyerProfile />} />
             <Route path="/seller" element={<SellerHome />} />
@@ -71,7 +80,12 @@ const AuthenticatedApp = () => {
             <Route path="/seller/businesses/:id/branches/new" element={<BranchCreate />} />
             <Route path="/seller/businesses/:id/branches/:branchId" element={<BranchDetail />} />
             <Route path="/seller/businesses/:id/branches/:branchId/edit" element={<BranchEdit />} />
+            <Route path="/seller/businesses/:id/branches/:branchId/inventory" element={<SellerBranchInventory />} />
             <Route path="/seller/products" element={<SellerProducts />} />
+            <Route path="/seller/products/new" element={<ProductCreate />} />
+            <Route path="/seller/products/categories" element={<SellerCategories />} />
+            <Route path="/seller/products/:id" element={<ProductDetailSeller />} />
+            <Route path="/seller/products/:id/edit" element={<ProductEdit />} />
             <Route path="/seller/profile" element={<SellerProfile />} />
           </Route>
         </Route>

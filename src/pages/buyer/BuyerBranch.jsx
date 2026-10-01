@@ -5,9 +5,10 @@ import { MapPin, Phone, Clock, Navigation2, AlertCircle } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import StatusBadge from "@/components/vimi/StatusBadge";
 import MapView from "@/components/vimi/MapView";
-import { PrimaryButton } from "@/components/vimi/VimiButton";
+import { PrimaryButton, SecondaryButton } from "@/components/vimi/VimiButton";
 import { LoadingState, EmptyState } from "@/components/vimi/States";
 import { openInMaps } from "@/lib/maps";
+import { Package } from "lucide-react";
 
 export default function BuyerBranch() {
   const { branchId } = useParams();

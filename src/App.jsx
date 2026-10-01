@@ -1,12 +1,23 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
-// Add page imports here
+import ProtectedRoute from '@/components/ProtectedRoute';
+import AppShell from '@/components/vimi/AppShell';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+import BuyerHome from '@/pages/buyer/Home';
+import BuyerOrders from '@/pages/buyer/Orders';
+import BuyerProfile from '@/pages/buyer/Profile';
+import SellerHome from '@/pages/seller/Home';
+import SellerProducts from '@/pages/seller/Products';
+import SellerProfile from '@/pages/seller/Profile';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -34,7 +45,20 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route element={<AppShell />}>
+          <Route path="/" element={<BuyerHome />} />
+          <Route path="/orders" element={<BuyerOrders />} />
+          <Route path="/profile" element={<BuyerProfile />} />
+          <Route path="/seller" element={<SellerHome />} />
+          <Route path="/seller/products" element={<SellerProducts />} />
+          <Route path="/seller/profile" element={<SellerProfile />} />
+        </Route>
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

@@ -18,6 +18,14 @@ import BuyerProfile from '@/pages/buyer/Profile';
 import SellerHome from '@/pages/seller/Home';
 import SellerProducts from '@/pages/seller/Products';
 import SellerProfile from '@/pages/seller/Profile';
+import BusinessCreate from '@/pages/seller/BusinessCreate';
+import BusinessProfile from '@/pages/seller/BusinessProfile';
+import BranchCreate from '@/pages/seller/BranchCreate';
+import BranchEdit from '@/pages/seller/BranchEdit';
+import BranchDetail from '@/pages/seller/BranchDetail';
+import Store from '@/pages/buyer/Store';
+import BuyerBranch from '@/pages/buyer/BuyerBranch';
+import { BusinessProvider } from '@/lib/BusinessContext';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -44,23 +52,32 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route element={<AppShell />}>
-          <Route path="/" element={<BuyerHome />} />
-          <Route path="/orders" element={<BuyerOrders />} />
-          <Route path="/profile" element={<BuyerProfile />} />
-          <Route path="/seller" element={<SellerHome />} />
-          <Route path="/seller/products" element={<SellerProducts />} />
-          <Route path="/seller/profile" element={<SellerProfile />} />
+    <BusinessProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+          <Route element={<AppShell />}>
+            <Route path="/" element={<BuyerHome />} />
+            <Route path="/store/:storeId" element={<Store />} />
+            <Route path="/branch/:branchId" element={<BuyerBranch />} />
+            <Route path="/orders" element={<BuyerOrders />} />
+            <Route path="/profile" element={<BuyerProfile />} />
+            <Route path="/seller" element={<SellerHome />} />
+            <Route path="/seller/businesses/new" element={<BusinessCreate />} />
+            <Route path="/seller/businesses/:id" element={<BusinessProfile />} />
+            <Route path="/seller/businesses/:id/branches/new" element={<BranchCreate />} />
+            <Route path="/seller/businesses/:id/branches/:branchId" element={<BranchDetail />} />
+            <Route path="/seller/businesses/:id/branches/:branchId/edit" element={<BranchEdit />} />
+            <Route path="/seller/products" element={<SellerProducts />} />
+            <Route path="/seller/profile" element={<SellerProfile />} />
+          </Route>
         </Route>
-      </Route>
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </BusinessProvider>
   );
 };
 

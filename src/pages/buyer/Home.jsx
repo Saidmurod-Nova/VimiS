@@ -39,18 +39,21 @@ export default function Home() {
       <div className="glass rounded-2xl p-4">
         <p className="text-sm font-medium text-foreground">Do'kon ID orqali kirish</p>
         <p className="mt-0.5 text-xs text-muted-foreground">Do'kon ID sini kiriting va to'g'ridan-to'g'ri kirish.</p>
-        <div className="mt-3 flex gap-2">
+        <form
+          className="mt-3 flex gap-2"
+          onSubmit={(e) => { e.preventDefault(); const c = storeCode.trim(); if (c) navigate(`/store/${encodeURIComponent(c)}`); }}
+        >
           <TextInput
             placeholder="Do'kon ID sini kiriting"
             value={storeCode}
             onChange={(e) => setStoreCode(e.target.value)}
             className="flex-1"
           />
-          <PrimaryButton className="h-12 shrink-0">
+          <PrimaryButton type="submit" className="h-12 shrink-0">
             <ArrowRight className="mr-1 w-4 h-4" aria-hidden="true" />
             Kirish
           </PrimaryButton>
-        </div>
+        </form>
       </div>
 
       <section>

@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import { Home, ShoppingBag, User, Package, Store, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import VimiLogo from "./VimiLogo";
+import { useBusiness } from "@/lib/BusinessContext";
 
 const buyerNav = [
   { to: "/", label: "Bosh sahifa", icon: Home },
@@ -69,6 +70,25 @@ function ModeSwitcher({ isSeller }) {
   );
 }
 
+function CurrentBusiness() {
+  const { selectedBusiness, businesses } = useBusiness();
+  if (!businesses || businesses.length === 0) return null;
+  return (
+    <Link
+      to={selectedBusiness ? `/seller/businesses/${selectedBusiness.id}` : "/seller"}
+      className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 transition active:scale-[0.99]"
+    >
+      <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Store className="w-4 h-4" aria-hidden="true" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium text-foreground">{selectedBusiness?.name || "Biznes tanlang"}</span>
+        {selectedBusiness && <span className="block truncate text-xs text-muted-foreground">{selectedBusiness.store_id}</span>}
+      </span>
+    </Link>
+  );
+}
+
 export default function AppShell() {
   const { pathname } = useLocation();
   const isSeller = pathname.startsWith("/seller");
@@ -85,6 +105,7 @@ export default function AppShell() {
             <NavItem key={item.to} {...item} active={isActive(pathname, item.to)} />
           ))}
         </nav>
+        {isSeller && <CurrentBusiness />}
         <ModeSwitcher isSeller={isSeller} />
       </aside>
 

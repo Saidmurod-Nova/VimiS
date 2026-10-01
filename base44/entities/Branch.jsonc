@@ -1,0 +1,84 @@
+{
+  "properties": {
+    "business_id": {
+      "type": "string"
+    },
+    "owner_id": {
+      "type": "string",
+      "description": "Business owner user id"
+    },
+    "name": {
+      "type": "string"
+    },
+    "geo_area_id": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "working_hours": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "business_id",
+    "owner_id",
+    "name",
+    "latitude",
+    "longitude"
+  ],
+  "name": "Branch",
+  "type": "object",
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.owner_id": "{{user.id}}"
+        },
+        {
+          "data.is_active": true
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

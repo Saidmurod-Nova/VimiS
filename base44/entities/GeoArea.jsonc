@@ -1,0 +1,47 @@
+{
+  "properties": {
+    "parent_id": {
+      "type": "string",
+      "description": "Parent GeoArea id; null for a root (country)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "country",
+        "region",
+        "district",
+        "city"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "type",
+    "name"
+  ],
+  "name": "GeoArea",
+  "type": "object",
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

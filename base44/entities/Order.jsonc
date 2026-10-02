@@ -2,9 +2,13 @@
   "name": "Order",
   "type": "object",
   "properties": {
+    "order_number": {
+      "type": "string",
+      "description": "Human-readable unique order number, e.g. VIM-20261002-A3F9K2"
+    },
     "user_id": {
       "type": "string",
-      "description": "Owner user id (buyer)"
+      "description": "Buyer user id"
     },
     "business_id": {
       "type": "string"
@@ -24,9 +28,8 @@
       "type": "string",
       "enum": [
         "pending",
-        "confirmed",
+        "accepted",
         "preparing",
-        "delivering",
         "completed",
         "cancelled"
       ],
@@ -34,13 +37,21 @@
     },
     "delivery_address": {
       "type": "string",
-      "description": "Snapshot of delivery address text"
+      "description": "Snapshot of delivery address text at order time"
     },
     "delivery_latitude": {
       "type": "number"
     },
     "delivery_longitude": {
       "type": "number"
+    },
+    "buyer_name_snapshot": {
+      "type": "string",
+      "description": "Snapshot of buyer full name at order time"
+    },
+    "buyer_phone_snapshot": {
+      "type": "string",
+      "description": "Snapshot of buyer phone at order time"
     },
     "payment_method": {
       "type": "string"
@@ -61,12 +72,32 @@
     },
     "notes": {
       "type": "string"
+    },
+    "cancellation_reason": {
+      "type": "string"
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "preparing_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "cancelled_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
     "user_id",
     "business_id",
     "branch_id",
+    "order_number",
     "total"
   ],
   "rls": {

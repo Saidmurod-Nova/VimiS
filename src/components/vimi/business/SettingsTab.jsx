@@ -15,6 +15,7 @@ export default function SettingsTab({ business, onUpdated }) {
   const [categoryId, setCategoryId] = useState(business.category_id || "");
   const [categoryName, setCategoryName] = useState(business.category_name || "");
   const [logoUrl, setLogoUrl] = useState(business.logo_url || "");
+  const [threshold, setThreshold] = useState(business.low_stock_threshold != null ? business.low_stock_threshold : 5);
   const [saving, setSaving] = useState(false);
   const [confirmActive, setConfirmActive] = useState(false);
 
@@ -23,7 +24,8 @@ export default function SettingsTab({ business, onUpdated }) {
     setSaving(true);
     try {
       const updated = await base44.entities.Business.update(business.id, {
-        name: name.trim(), description, category_id: categoryId, category_name: categoryName, logo_url: logoUrl
+        name: name.trim(), description, category_id: categoryId, category_name: categoryName, logo_url: logoUrl,
+        low_stock_threshold: Math.max(0, Number(threshold) || 0)
       });
       onUpdated(updated);
       toast({ title: "Sozlamalar saqlandi" });
@@ -46,6 +48,11 @@ export default function SettingsTab({ business, onUpdated }) {
         <div className="space-y-2"><Label>Tavsif</Label><TextInput value={description} onChange={(e) => setDescription(e.target.value)} /></div>
         <CategorySelect value={categoryId} onChange={(cid, cn) => { setCategoryId(cid); setCategoryName(cn); }} />
         <div className="space-y-2"><Label>Logo</Label><LogoUpload value={logoUrl} onChange={setLogoUrl} /></div>
+        <div className="space-y-2">
+          <Label>Kam qoldi chegarasi (dona)</Label>
+          <TextInput type="number" min="0" value={threshold} onChange={(e) => setThreshold(e.target.value)} />
+          <p className="text-xs text-muted-foreground">Zaxira shu chegaragacha kam bo‘lsa, dashboardda ogohlantirish ko‘rsatiladi.</p>
+        </div>
         <PrimaryButton type="submit" className="h-12 w-full" disabled={saving}>{saving ? "Saqlanmoqda..." : "Sozlamalarni saqlash"}</PrimaryButton>
       </form>
       <div className="rounded-2xl border border-border bg-card p-4">

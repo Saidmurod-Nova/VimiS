@@ -23,6 +23,9 @@ import ProductEdit from '@/pages/seller/ProductEdit';
 import SellerCategories from '@/pages/seller/Categories';
 import SellerBranchInventory from '@/pages/seller/BranchInventory';
 import SellerProfile from '@/pages/seller/Profile';
+import SellerStatistics from '@/pages/seller/Statistics';
+import SellerOrders from '@/pages/seller/Orders';
+import SellerOrderDetail from '@/pages/seller/OrderDetail';
 import BuyerBranchProducts from '@/pages/buyer/BranchProducts';
 import BuyerProductDetail from '@/pages/buyer/ProductDetail';
 import BusinessCreate from '@/pages/seller/BusinessCreate';
@@ -92,6 +95,9 @@ const AuthenticatedApp = () => {
             <Route path="/seller/products/:id" element={<ProductDetailSeller />} />
             <Route path="/seller/products/:id/edit" element={<ProductEdit />} />
             <Route path="/seller/profile" element={<SellerProfile />} />
+            <Route path="/seller/statistics" element={<SellerStatistics />} />
+            <Route path="/seller/orders" element={<SellerOrders />} />
+            <Route path="/seller/orders/:id" element={<SellerOrderDetail />} />
           </Route>
         </Route>
         <Route path="*" element={<PageNotFound />} />

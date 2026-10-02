@@ -24,6 +24,11 @@
     "is_active": {
       "type": "boolean",
       "default": true
+    },
+    "low_stock_threshold": {
+      "type": "integer",
+      "default": 5,
+      "description": "Per-business low-stock warning threshold in units; used by dashboard alerts"
     }
   },
   "required": [

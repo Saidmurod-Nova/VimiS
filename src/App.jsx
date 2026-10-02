@@ -38,6 +38,7 @@ import BuyerBranch from '@/pages/buyer/BuyerBranch';
 import { BusinessProvider } from '@/lib/BusinessContext';
 import { BuyerProvider } from '@/lib/BuyerContext';
 import Search from '@/pages/buyer/Search';
+import Notifications from '@/pages/Notifications';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -80,6 +81,7 @@ const AuthenticatedApp = () => {
             <Route path="/branch/:branchId/products/:productId" element={<BuyerProductDetail />} />
             <Route path="/product/:productId" element={<BuyerProductDetail />} />
             <Route path="/search" element={<Search />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="/orders" element={<BuyerOrders />} />
             <Route path="/profile" element={<BuyerProfile />} />
             <Route path="/seller" element={<SellerHome />} />

@@ -89,10 +89,12 @@ export default async function(req) {
 
     await base44.asServiceRole.entities.Order.update(order.id, patch);
 
-    // Best-effort notifications to the other party.
+    // Best-effort notifications to the other party. Idempotent via event_key
+    // so repeated taps/retries never duplicate notifications. A notification
+    // failure never reverses the transition that already succeeded above.
     const business = await base44.asServiceRole.entities.Business.get(order.business_id).catch(() => null);
-    if (buyerMsg && order.user_id) await notify(base44, order.user_id, { ...buyerMsg, type: 'order', related_id: order.id });
-    if (sellerMsg && business && business.created_by_id) await notify(base44, business.created_by_id, { ...sellerMsg, type: 'order', related_id: order.id });
+    if (buyerMsg && order.user_id) await notify(base44, order.user_id, { ...buyerMsg, type: 'order_buyer', related_id: order.id, event_key: `order:${order.id}:${newStatus}:buyer` });
+    if (sellerMsg && business && business.created_by_id) await notify(base44, business.created_by_id, { ...sellerMsg, type: 'order_seller', related_id: order.id, event_key: `order:${order.id}:${newStatus}:seller` });
 
     return Response.json({ ok: true, status: newStatus });
   } catch (error) {

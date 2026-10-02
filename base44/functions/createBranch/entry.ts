@@ -13,8 +13,13 @@ export default async function(req) {
       address, latitude, longitude, phone, working_hours
     } = body || {};
 
-    if (!business_id || !name || latitude == null || longitude == null) {
+    if (!business_id || !name || !String(name).trim() || latitude == null || longitude == null) {
       return Response.json({ error: "Filial nomi, biznes va joylashuv majburiy" }, { status: 400 });
+    }
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    if (Number.isNaN(lat) || lat < -90 || lat > 90 || Number.isNaN(lng) || lng < -180 || lng > 180) {
+      return Response.json({ error: "Joylashuv koordinatalari noto'g'ri" }, { status: 400 });
     }
 
     // Server-side: only the business owner may create its branches.
@@ -23,15 +28,15 @@ export default async function(req) {
     const branch = await base44.asServiceRole.entities.Branch.create({
       business_id,
       owner_id: user.id,
-      name,
+      name: String(name).trim(),
       geo_area_id,
       country,
       region,
       city,
       district,
       address,
-      latitude: Number(latitude),
-      longitude: Number(longitude),
+      latitude: lat,
+      longitude: lng,
       phone,
       working_hours,
       is_active: true

@@ -102,13 +102,15 @@ export default async function(req) {
     for (const it of items) { try { await base44.asServiceRole.entities.CartItem.delete(it.id); } catch {} }
     try { await base44.asServiceRole.entities.Cart.update(cart.id, { status: 'checked_out' }); } catch {}
 
-    // Best-effort: notify the business owner a new order arrived.
+    // Best-effort: notify the business owner a new order arrived. Idempotent
+    // via event_key so a retry/replay never duplicates the notification.
     if (business.created_by_id) {
       await notify(base44, business.created_by_id, {
         title: 'Yangi buyurtma',
         body: `${orderNumber} · ${order.item_count} ta mahsulot · ${total} so'm`,
-        type: 'order',
-        related_id: order.id
+        type: 'order_seller',
+        related_id: order.id,
+        event_key: `order:${order.id}:new:seller`
       });
     }
 

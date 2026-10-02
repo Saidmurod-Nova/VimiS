@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import { Home, ShoppingBag, User, Package, Store, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import VimiLogo from "./VimiLogo";
+import NotificationBell from "./NotificationBell";
 import { useBusiness } from "@/lib/BusinessContext";
 
 const buyerNav = [
@@ -117,6 +118,7 @@ export default function AppShell() {
         </div>
       </nav>
 
+      <NotificationBell />
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-4 pb-28 pt-6 sm:px-6 lg:pb-12">
           <Outlet />

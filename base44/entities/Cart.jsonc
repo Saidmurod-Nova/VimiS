@@ -1,0 +1,67 @@
+{
+  "name": "Cart",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Owner user id"
+    },
+    "business_id": {
+      "type": "string",
+      "description": "Business this cart is scoped to"
+    },
+    "branch_id": {
+      "type": "string",
+      "description": "Selected branch this cart is scoped to"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "checked_out"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "user_id",
+    "business_id",
+    "branch_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

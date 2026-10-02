@@ -1,0 +1,60 @@
+{
+  "name": "OrderItem",
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "type": "string"
+    },
+    "product_id": {
+      "type": "string"
+    },
+    "product_name": {
+      "type": "string",
+      "description": "Immutable snapshot of product name at order time"
+    },
+    "unit_price": {
+      "type": "number",
+      "description": "Immutable snapshot of effective unit price"
+    },
+    "quantity": {
+      "type": "integer"
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "image_url": {
+      "type": "string",
+      "format": "uri"
+    }
+  },
+  "required": [
+    "order_id",
+    "product_id",
+    "product_name",
+    "unit_price",
+    "quantity",
+    "subtotal"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

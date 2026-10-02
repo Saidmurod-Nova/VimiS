@@ -1,0 +1,101 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Owner user id (buyer)"
+    },
+    "business_id": {
+      "type": "string"
+    },
+    "branch_id": {
+      "type": "string"
+    },
+    "business_name": {
+      "type": "string",
+      "description": "Snapshot of business name at order time"
+    },
+    "branch_name": {
+      "type": "string",
+      "description": "Snapshot of branch name at order time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "preparing",
+        "delivering",
+        "completed",
+        "cancelled"
+      ],
+      "default": "pending"
+    },
+    "delivery_address": {
+      "type": "string",
+      "description": "Snapshot of delivery address text"
+    },
+    "delivery_latitude": {
+      "type": "number"
+    },
+    "delivery_longitude": {
+      "type": "number"
+    },
+    "payment_method": {
+      "type": "string"
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "delivery_fee": {
+      "type": "number",
+      "default": 0
+    },
+    "total": {
+      "type": "number"
+    },
+    "item_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id",
+    "business_id",
+    "branch_id",
+    "total"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

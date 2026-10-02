@@ -33,6 +33,8 @@ import BranchDetail from '@/pages/seller/BranchDetail';
 import Store from '@/pages/buyer/Store';
 import BuyerBranch from '@/pages/buyer/BuyerBranch';
 import { BusinessProvider } from '@/lib/BusinessContext';
+import { BuyerProvider } from '@/lib/BuyerContext';
+import Search from '@/pages/buyer/Search';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -60,6 +62,7 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <BusinessProvider>
+      <BuyerProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -72,6 +75,8 @@ const AuthenticatedApp = () => {
             <Route path="/branch/:branchId" element={<BuyerBranch />} />
             <Route path="/branch/:branchId/products" element={<BuyerBranchProducts />} />
             <Route path="/branch/:branchId/products/:productId" element={<BuyerProductDetail />} />
+            <Route path="/product/:productId" element={<BuyerProductDetail />} />
+            <Route path="/search" element={<Search />} />
             <Route path="/orders" element={<BuyerOrders />} />
             <Route path="/profile" element={<BuyerProfile />} />
             <Route path="/seller" element={<SellerHome />} />
@@ -91,6 +96,7 @@ const AuthenticatedApp = () => {
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>
+      </BuyerProvider>
     </BusinessProvider>
   );
 };

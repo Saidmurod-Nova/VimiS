@@ -4,10 +4,13 @@ import { MapPin, Pencil, MapPinned, Briefcase, RefreshCw, LogOut } from "lucide-
 import Avatar from "@/components/vimi/Avatar";
 import { SettingsList, SettingsRow } from "@/components/vimi/SettingsList";
 import { useAuth } from "@/lib/AuthContext";
+import { useBuyer } from "@/lib/BuyerContext";
 
 export default function Profile() {
   const { user, logout } = useAuth();
+  const { selectedLocation, setLocation } = useBuyer();
   const navigate = useNavigate();
+  const locLabel = selectedLocation?.city || selectedLocation?.region || "Joylashuv tanlanmagan";
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -19,7 +22,7 @@ export default function Profile() {
           <h2 className="truncate text-lg font-semibold text-foreground">{user?.full_name || "Foydalanuvchi"}</h2>
           <p className="truncate text-sm text-muted-foreground">{user?.phone || user?.email || "—"}</p>
           <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="w-3 h-3" aria-hidden="true" />Toshkent
+            <MapPin className="w-3 h-3" aria-hidden="true" />{locLabel}
           </p>
         </div>
       </div>

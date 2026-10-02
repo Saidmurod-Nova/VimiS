@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Store } from "lucide-react";
+import { Store as StoreIcon, ShoppingBag, MapPin } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import Price from "@/components/vimi/Price";
 import AvailabilityBadge from "@/components/vimi/AvailabilityBadge";
@@ -12,68 +12,122 @@ import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
+// Single product detail implementation. Supports both branch-scoped
+// (/branch/:branchId/products/:productId) and branch-agnostic (/product/:productId)
+// routes. Branch-specific price and availability come from getBranchCatalog;
+// when multiple branches exist the buyer selects one before adding to cart.
 export default function ProductDetail() {
   const { branchId, productId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [data, setData] = useState(null);
+  const [product, setProduct] = useState(null);
+  const [business, setBusiness] = useState(null);
   const [branches, setBranches] = useState([]);
+  const [catalog, setCatalog] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [catalogLoading, setCatalogLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedBranchId, setSelectedBranchId] = useState(branchId || null);
 
+  // Load product + business + active branches.
   useEffect(() => {
-    setLoading(true); setError("");
-    base44.functions.invoke("getBranchCatalog", { branch_id: branchId })
-      .then(async (res) => {
-        setData(res.data);
-        if (res.data?.business?.id) {
-          const br = await base44.entities.Branch.filter({ business_id: res.data.business.id });
-          setBranches((br || []).filter((b) => b.is_active));
-        }
-      })
-      .catch((err) => setError(err.response?.data?.error || "Mahsulot yuklanmadi"))
-      .finally(() => setLoading(false));
-  }, [branchId, productId]);
+    (async () => {
+      setLoading(true); setError(""); setProduct(null); setBusiness(null); setBranches([]); setCatalog(null);
+      try {
+        const p = await base44.entities.Product.get(productId);
+        if (!p || !p.is_active) { setError("Mahsulot topilmadi"); return; }
+        setProduct(p);
+        const b = await base44.entities.Business.get(p.business_id);
+        if (!b || !b.is_active) { setError("Do'kon hozirda mavjud emas"); return; }
+        setBusiness(b);
+        const br = await base44.entities.Branch.filter({ business_id: b.id });
+        const active = (br || []).filter((x) => x.is_active);
+        setBranches(active);
+        const paramValid = branchId && active.some((x) => x.id === branchId);
+        if (paramValid) setSelectedBranchId(branchId);
+        else if (active.length === 1) setSelectedBranchId(active[0].id);
+        else setSelectedBranchId(null);
+      } catch (e) {
+        setError(e?.response?.data?.error || "Mahsulot yuklanmadi");
+      } finally {
+        setLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
 
-  if (loading) return <div className="space-y-4"><PageHeader title="Mahsulot" backTo={`/branch/${branchId}/products`} /><LoadingState /></div>;
-  if (error) return <div className="space-y-4"><PageHeader title="Mahsulot" backTo={`/branch/${branchId}/products`} /><ErrorState title={error} /></div>;
+  // Load branch catalog when a branch is selected.
+  useEffect(() => {
+    if (!selectedBranchId || !business) return;
+    setCatalogLoading(true);
+    base44.functions.invoke("getBranchCatalog", { branch_id: selectedBranchId })
+      .then((res) => setCatalog(res.data))
+      .catch(() => setCatalog(null))
+      .finally(() => setCatalogLoading(false));
+  }, [selectedBranchId, business]);
 
-  const item = (data?.items || []).find((i) => i.product_id === productId);
-  if (!item) return <div className="space-y-4"><PageHeader title="Mahsulot" backTo={`/branch/${branchId}/products`} /><EmptyState title="Mahsulot topilmadi" description="Bu mahsulot hozirda sotuvda emas." /></div>;
+  if (loading) return <div className="space-y-4"><PageHeader title="Mahsulot" backTo={branchId ? `/branch/${branchId}/products` : "/"} /><LoadingState /></div>;
+  if (error) return <div className="space-y-4"><PageHeader title="Mahsulot" backTo={branchId ? `/branch/${branchId}/products` : "/"} /><ErrorState title={error} /></div>;
 
-  const branch = data.branch;
+  const item = (catalog?.items || []).find((i) => i.product_id === productId);
+  const selectedBranch = branches.find((b) => b.id === selectedBranchId);
+
+  const onBranchChange = (v) => {
+    // Canonicalize to the branch-scoped route so the link is shareable and
+    // back-navigation works from the catalog list.
+    navigate(`/branch/${v}/products/${productId}`, { replace: true });
+    setSelectedBranchId(v);
+  };
+
   const onAdd = () => toast({ title: "Savat funksiyasi tez orada", description: "Buyurtmalar moduli hozir tayyorlanmoqda." });
+  const canAdd = item && item.available && selectedBranchId;
 
   return (
     <div className="animate-fade-in space-y-5">
-      <PageHeader title={item.name} backTo={`/branch/${branchId}/products`} />
+      <PageHeader title={product.name} backTo={branchId ? `/branch/${branchId}/products` : business ? `/store/${business.store_id}` : "/"} />
 
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="aspect-square w-full bg-secondary">
-          {item.image_url ? <Image src={item.image_url} alt={item.name} fittingType="fill" className="h-full w-full" /> : <div className="flex h-full w-full items-center justify-center"><Store className="h-12 w-12 text-muted-foreground/40" /></div>}
+          {product.image_url ? <Image src={product.image_url} alt={product.name} fittingType="fill" className="h-full w-full" /> : <div className="flex h-full w-full items-center justify-center"><ShoppingBag className="h-12 w-12 text-muted-foreground/40" /></div>}
         </div>
-        <div className="p-4 space-y-3">
-          {item.category_name && <p className="text-xs text-muted-foreground">{item.category_name}</p>}
-          <h2 className="text-xl font-semibold">{item.name}</h2>
-          <Price value={item.effective_price} size="lg" />
-          <AvailabilityBadge available={item.available} disabled={item.disabled} hasInventory={item.has_inventory} />
-          {item.description && <p className="pt-1 text-sm text-muted-foreground whitespace-pre-line">{item.description}</p>}
+        <div className="space-y-3 p-4">
+          {product.category_name && <p className="text-xs text-muted-foreground">{product.category_name}</p>}
+          <h2 className="text-xl font-semibold">{product.name}</h2>
+          {business && <button type="button" onClick={() => navigate(`/store/${business.store_id}`)} className="inline-flex items-center gap-1 text-xs text-primary">{business.name}</button>}
+          {item ? <Price value={item.effective_price} size="lg" /> : <p className="text-sm text-muted-foreground">Filial tanlang</p>}
+          {item && <AvailabilityBadge available={item.available} disabled={item.disabled} hasInventory={item.has_inventory} />}
+          {product.description && <p className="whitespace-pre-line pt-1 text-sm text-muted-foreground">{product.description}</p>}
         </div>
       </div>
 
       <div className="space-y-2">
         <Label>Filial</Label>
-        <Select value={branchId} onValueChange={(v) => navigate(`/branch/${v}/products/${productId}`)}>
-          <SelectTrigger className="h-12 rounded-xl bg-secondary/70"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {branches.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {branches.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Faol filiallar yo'q.</p>
+        ) : (
+          <Select value={selectedBranchId || ""} onValueChange={onBranchChange}>
+            <SelectTrigger className="h-12 rounded-xl bg-secondary/70"><SelectValue placeholder="Filialni tanlang" /></SelectTrigger>
+            <SelectContent>
+              {branches.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name}{b.city ? " · " + b.city : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {selectedBranch && (
+          <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <MapPin className="h-3 w-3" />{[selectedBranch.city, selectedBranch.region].filter(Boolean).join(", ")}{selectedBranch.address ? " · " + selectedBranch.address : ""}
+          </p>
+        )}
       </div>
 
-      <PrimaryButton className="h-12 w-full" disabled={!item.available} onClick={onAdd}>
-        {item.available ? "Savatga qo'shish" : "Mavjud emas"}
-      </PrimaryButton>
+      {branches.length > 0 && (
+        <PrimaryButton className="h-12 w-full" disabled={!canAdd} onClick={onAdd}>
+          {!selectedBranchId ? "Filialni tanlang" : item ? (item.available ? "Savatga qo'shish" : "Mavjud emas") : "..."}
+        </PrimaryButton>
+      )}
     </div>
   );
 }

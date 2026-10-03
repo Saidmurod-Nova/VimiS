@@ -7,6 +7,7 @@ import ProductCard from "@/components/vimi/ProductCard";
 import AvailabilityBadge from "@/components/vimi/AvailabilityBadge";
 import { LoadingState, EmptyState, ErrorState } from "@/components/vimi/States";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import CartButton from "@/components/vimi/CartButton";
 
 export default function BranchProducts() {
   const { branchId } = useParams();
@@ -75,6 +76,7 @@ export default function BranchProducts() {
           ))}
         </div>
       )}
+      <CartButton />
     </div>
   );
 }

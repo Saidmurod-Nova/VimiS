@@ -39,6 +39,11 @@ import { BusinessProvider } from '@/lib/BusinessContext';
 import { BuyerProvider } from '@/lib/BuyerContext';
 import Search from '@/pages/buyer/Search';
 import Notifications from '@/pages/Notifications';
+import Cart from '@/pages/buyer/Cart';
+import Checkout from '@/pages/buyer/Checkout';
+import Addresses from '@/pages/buyer/Addresses';
+import AddressEdit from '@/pages/buyer/AddressEdit';
+import { CartProvider } from '@/lib/CartContext';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -66,8 +71,9 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <BusinessProvider>
-      <BuyerProvider>
-      <Routes>
+    <BuyerProvider>
+    <CartProvider>
+    <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -83,6 +89,11 @@ const AuthenticatedApp = () => {
             <Route path="/search" element={<Search />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/orders" element={<BuyerOrders />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/addresses" element={<Addresses />} />
+            <Route path="/addresses/new" element={<AddressEdit />} />
+            <Route path="/addresses/:id/edit" element={<AddressEdit />} />
             <Route path="/profile" element={<BuyerProfile />} />
             <Route path="/seller" element={<SellerHome />} />
             <Route path="/seller/businesses/new" element={<BusinessCreate />} />
@@ -104,6 +115,7 @@ const AuthenticatedApp = () => {
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>
+      </CartProvider>
       </BuyerProvider>
     </BusinessProvider>
   );

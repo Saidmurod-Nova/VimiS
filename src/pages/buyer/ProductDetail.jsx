@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Store as StoreIcon, ShoppingBag, MapPin } from "lucide-react";
+import { Store as StoreIcon, ShoppingBag, MapPin, Loader2 } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import Price from "@/components/vimi/Price";
 import AvailabilityBadge from "@/components/vimi/AvailabilityBadge";
@@ -11,6 +11,9 @@ import { Image } from "@/components/ui/image";
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { useCart } from "@/lib/CartContext";
+import ConfirmDialog from "@/components/vimi/ConfirmDialog";
+import CartButton from "@/components/vimi/CartButton";
 
 // Single product detail implementation. Supports both branch-scoped
 // (/branch/:branchId/products/:productId) and branch-agnostic (/product/:productId)
@@ -28,6 +31,9 @@ export default function ProductDetail() {
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedBranchId, setSelectedBranchId] = useState(branchId || null);
+  const { addItem } = useCart();
+  const [adding, setAdding] = useState(false);
+  const [conflictOpen, setConflictOpen] = useState(false);
 
   // Load product + business + active branches.
   useEffect(() => {
@@ -79,8 +85,34 @@ export default function ProductDetail() {
     setSelectedBranchId(v);
   };
 
-  const onAdd = () => toast({ title: "Savat funksiyasi tez orada", description: "Buyurtmalar moduli hozir tayyorlanmoqda." });
   const canAdd = item && item.available && selectedBranchId;
+
+  const doAdd = async (forceNew) => {
+    if (!selectedBranchId || !item) return;
+    setAdding(true);
+    try {
+      const res = await addItem(productId, selectedBranchId, 1, { forceNew });
+      if (res && res.conflict) { setConflictOpen(true); return; }
+      toast({ title: "Savatga qo'shildi", description: item.name });
+    } catch (e) {
+      toast({ title: e?.response?.data?.error || "Qo'shib bo'lmadi", variant: "destructive" });
+    } finally {
+      setAdding(false);
+    }
+  };
+  const onAdd = () => doAdd(false);
+  const onConfirmConflict = async () => {
+    setConflictOpen(false);
+    setAdding(true);
+    try {
+      await addItem(productId, selectedBranchId, 1, { forceNew: true });
+      toast({ title: "Savatga qo'shildi", description: item?.name });
+    } catch (e) {
+      toast({ title: e?.response?.data?.error || "Qo'shib bo'lmadi", variant: "destructive" });
+    } finally {
+      setAdding(false);
+    }
+  };
 
   return (
     <div className="animate-fade-in space-y-5">
@@ -124,10 +156,21 @@ export default function ProductDetail() {
       </div>
 
       {branches.length > 0 && (
-        <PrimaryButton className="h-12 w-full" disabled={!canAdd} onClick={onAdd}>
-          {!selectedBranchId ? "Filialni tanlang" : item ? (item.available ? "Savatga qo'shish" : "Mavjud emas") : "..."}
+        <PrimaryButton className="h-12 w-full" disabled={!canAdd || adding} onClick={onAdd}>
+          {adding ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Qo'shilmoqda...</> : !selectedBranchId ? "Filialni tanlang" : item ? (item.available ? "Savatga qo'shish" : "Mavjud emas") : "..."}
         </PrimaryButton>
       )}
+
+      <ConfirmDialog
+        open={conflictOpen}
+        onOpenChange={setConflictOpen}
+        title="Savatda boshqa do'kon mahsuloti bor"
+        description="Joriy savatni tozalab, bu mahsulotni qo'shishni xohlaysizmi?"
+        confirmText="Tozalash va qo'shish"
+        destructive
+        onConfirm={onConfirmConflict}
+      />
+      <CartButton />
     </div>
   );
 }

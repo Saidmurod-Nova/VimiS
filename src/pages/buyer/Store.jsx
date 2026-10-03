@@ -6,6 +6,7 @@ import PageHeader from "@/components/vimi/PageHeader";
 import BottomSheet from "@/components/vimi/BottomSheet";
 import BranchSelectSheet from "@/components/vimi/BranchSelectSheet";
 import FavoriteButton from "@/components/vimi/FavoriteButton";
+import CartButton from "@/components/vimi/CartButton";
 import ProductCard from "@/components/vimi/ProductCard";
 import AvailabilityBadge from "@/components/vimi/AvailabilityBadge";
 import StatusBadge from "@/components/vimi/StatusBadge";
@@ -193,6 +194,7 @@ export default function Store() {
           </BottomSheet>
         </>
       )}
+      <CartButton />
     </div>
   );
 }

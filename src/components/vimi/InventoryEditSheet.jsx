@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { PrimaryButton } from "@/components/vimi/VimiButton";
 import Price from "@/components/vimi/Price";
 import { parsePrice } from "@/lib/inventory";
+import { upsertInventoryForBranch } from "@/lib/supabaseCatalog";
 
 export default function InventoryEditSheet({ open, onOpenChange, branch, product, inventory, onSaved }) {
   const [stock, setStock] = useState("0");
@@ -36,17 +37,23 @@ export default function InventoryEditSheet({ open, onOpenChange, branch, product
     if (ov !== null && ov < 0) { setError("Narx noto'g'ri"); return; }
     setSaving(true);
     try {
-      const res = await base44.functions.invoke("upsertInventory", {
-        branch_id: branch.id,
-        product_id: product.id,
-        stock: s,
-        price_override: ov,
-        is_available: available
-      });
-      onSaved?.(res.data.inventory);
+      let savedInventory;
+      if (import.meta.env.VITE_AUTH_PROVIDER === "supabase") {
+        savedInventory = await upsertInventoryForBranch({ branchId: branch.id, productId: product.id, stock: s, priceOverride: ov, isAvailable: available });
+      } else {
+        const res = await base44.functions.invoke("upsertInventory", {
+          branch_id: branch.id,
+          product_id: product.id,
+          stock: s,
+          price_override: ov,
+          is_available: available
+        });
+        savedInventory = res.data.inventory;
+      }
+      onSaved?.(savedInventory);
       onOpenChange(false);
     } catch (err) {
-      setError(err.response?.data?.error || "Stockni yangilab bo'lmadi");
+      setError(err.response?.data?.error || err.message || "Stockni yangilab bo'lmadi");
     } finally { setSaving(false); }
   };
 

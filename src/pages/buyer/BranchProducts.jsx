@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseMode } from "@/lib/supabase";
+import { getBranchCatalogSupabase } from "@/lib/supabaseCatalog";
 import { Package, ChevronRight } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import ProductCard from "@/components/vimi/ProductCard";
@@ -19,9 +21,11 @@ export default function BranchProducts() {
 
   useEffect(() => {
     setLoading(true); setError(""); setData(null);
-    base44.functions.invoke("getBranchCatalog", { branch_id: branchId })
-      .then((res) => setData(res.data))
-      .catch((err) => setError(err.response?.data?.error || "Katalog yuklanmadi"))
+    const request = isSupabaseMode
+      ? getBranchCatalogSupabase(branchId)
+      : base44.functions.invoke("getBranchCatalog", { branch_id: branchId }).then((res) => res.data);
+    request.then(setData)
+      .catch((err) => setError(err?.response?.data?.error || err?.message || "Katalog yuklanmadi"))
       .finally(() => setLoading(false));
   }, [branchId]);
 

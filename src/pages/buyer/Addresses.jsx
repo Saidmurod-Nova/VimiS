@@ -6,6 +6,8 @@ import { PrimaryButton, GhostButton } from "@/components/vimi/VimiButton";
 import { EmptyState, ErrorState, LoadingState } from "@/components/vimi/States";
 import ConfirmDialog from "@/components/vimi/ConfirmDialog";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseMode } from "@/lib/supabase";
+import { deleteAddress, listAddresses, saveAddress } from "@/lib/supabaseRelations";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Addresses() {
@@ -21,10 +23,10 @@ export default function Addresses() {
   const load = async () => {
     setLoading(true); setError("");
     try {
-      const list = await base44.entities.Address.filter({}, "-created_date", 100);
+      const list = isSupabaseMode ? await listAddresses() : await base44.entities.Address.filter({}, "-created_date", 100);
       setAddresses((list || []).slice().sort((a, b) =>
         (b.is_default === true ? 1 : 0) - (a.is_default === true ? 1 : 0) ||
-        new Date(b.created_date) - new Date(a.created_date)
+        new Date(b.created_date || b.created_at) - new Date(a.created_date || a.created_at)
       ));
     } catch (e) {
       setError(e?.response?.data?.error || "Manzillar yuklanmadi");
@@ -38,7 +40,11 @@ export default function Addresses() {
   const onRemove = async () => {
     if (!removeId) return;
     const id = removeId; setRemoveId(null); setRemoving(true);
-    try { await base44.functions.invoke("deleteAddress", { address_id: id }); toast({ title: "Manzil o'chirildi" }); await load(); }
+    try {
+      if (isSupabaseMode) await deleteAddress(id);
+      else await base44.functions.invoke("deleteAddress", { address_id: id });
+      toast({ title: "Manzil o'chirildi" }); await load();
+    }
     catch (e) { toast({ title: e?.response?.data?.error || "O'chirib bo'lmadi", variant: "destructive" }); }
     finally { setRemoving(false); }
   };
@@ -46,7 +52,8 @@ export default function Addresses() {
   const setDefault = async (a) => {
     setDefaulting(a.id);
     try {
-      await base44.functions.invoke("saveAddress", {
+      if (isSupabaseMode) await saveAddress({ addressId: a.id, ...a, isDefault: true });
+      else await base44.functions.invoke("saveAddress", {
         address_id: a.id, title: a.title, address: a.address,
         latitude: a.latitude, longitude: a.longitude, is_default: true
       });

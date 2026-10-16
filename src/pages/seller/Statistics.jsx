@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { TrendingUp, ShoppingBag, CheckCircle2, XCircle, Package, Receipt } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseMode } from "@/lib/supabase";
+import { getSellerStatistics } from "@/lib/supabaseStatistics";
 import { useBusiness } from "@/lib/BusinessContext";
 import PageHeader from "@/components/vimi/PageHeader";
 import BranchSelectorSheet from "@/components/vimi/seller/BranchSelectorSheet";
@@ -19,7 +20,6 @@ import { formatSoM } from "@/lib/inventory";
 // performance uses immutable OrderItem snapshots.
 export default function Statistics() {
   const { selectedBusiness } = useBusiness();
-  const navigate = useNavigate();
   const businessId = selectedBusiness?.id;
 
   const [branchId, setBranchId] = useState("all");
@@ -34,8 +34,10 @@ export default function Statistics() {
     if (!businessId) return;
     setLoading(true); setError(null);
     try {
-      const res = await base44.functions.invoke("getSellerStatistics", { business_id: businessId, branch_id: branchId, range, from, to });
-      setData(res.data);
+      const result = isSupabaseMode
+        ? await getSellerStatistics({ businessId, branchId, range, from, to })
+        : (await base44.functions.invoke("getSellerStatistics", { business_id: businessId, branch_id: branchId, range, from, to })).data;
+      setData(result);
     } catch (e) { setError(e); setData(null); }
     finally { setLoading(false); }
   }, [businessId, branchId, range, from, to]);

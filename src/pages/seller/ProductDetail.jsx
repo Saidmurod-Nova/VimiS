@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/lib/BusinessContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Plus, Pencil, Archive, PackageOpen, AlertCircle, Store } from "lucide-react";
@@ -28,20 +28,32 @@ export default function ProductDetail() {
   const [assignOpen, setAssignOpen] = useState(false);
   const [toggling, setToggling] = useState(false);
 
-  const load = () => {
+  const load = async () => {
     setLoading(true);
-    base44.entities.Product.get(id).then(async (p) => {
+    try {
+      const { data: p, error: productError } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (productError) throw productError;
       setProduct(p);
       if (p) {
         selectBusiness(p.business_id);
-        const [br, inv] = await Promise.all([
-          base44.entities.Branch.filter({ business_id: p.business_id }, "name"),
-          base44.entities.BranchInventory.filter({ product_id: p.id })
+        const [branchesResult, inventoryResult] = await Promise.all([
+          supabase.from("branches").select("*").eq("business_id", p.business_id).order("name"),
+          supabase.from("branch_inventory").select("*").eq("product_id", p.id)
         ]);
-        setBranches(br || []);
-        setInventory(inv || []);
+        if (branchesResult.error) throw branchesResult.error;
+        if (inventoryResult.error) throw inventoryResult.error;
+        setBranches(branchesResult.data || []);
+        setInventory(inventoryResult.data || []);
       }
-    }).catch(() => setProduct(null)).finally(() => setLoading(false));
+    } catch {
+      setProduct(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, [id]);
@@ -55,11 +67,17 @@ export default function ProductDetail() {
   const toggleActive = async () => {
     setToggling(true);
     try {
-      const res = await base44.functions.invoke("updateProduct", { product_id: id, is_active: !product.is_active });
-      setProduct(res.data.product);
+      const { data, error } = await supabase
+        .from("products")
+        .update({ is_active: !product.is_active })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      setProduct(data);
       toast({ title: product.is_active ? "Mahsulot arxivlandi" : "Mahsulot faollashtirildi" });
     } catch (err) {
-      toast({ title: err.response?.data?.error || "Amalga oshmadi", variant: "destructive" });
+      toast({ title: err.message || "Amalga oshmadi", variant: "destructive" });
     } finally { setToggling(false); }
   };
 

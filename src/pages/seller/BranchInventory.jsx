@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { getBranch as getBranchSupabase, listProducts as listProductsSupabase, listBranchInventory as listBranchInventorySupabase } from "@/lib/supabaseCatalog";
 import { Search, Package } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import { SearchBar } from "@/components/vimi/VimiInput";
@@ -33,7 +34,12 @@ export default function BranchInventory() {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([
+    const useSupabase = import.meta.env.VITE_AUTH_PROVIDER === "supabase";
+    Promise.all(useSupabase ? [
+      getBranchSupabase(branchId),
+      listProductsSupabase({ businessId, includeInactive: true, limit: 200 }),
+      listBranchInventorySupabase(branchId)
+    ] : [
       base44.entities.Branch.get(branchId),
       base44.entities.Product.filter({ business_id: businessId }, "name"),
       base44.entities.BranchInventory.filter({ branch_id: branchId })

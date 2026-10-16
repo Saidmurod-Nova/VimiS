@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { listProductCategories } from "@/lib/supabaseCatalog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
@@ -11,7 +12,9 @@ export default function ProductCategorySelect({ businessId, value, onChange, lab
   useEffect(() => {
     if (!businessId) { setItems([]); setLoading(false); return; }
     setLoading(true);
-    base44.entities.ProductCategory.filter({ business_id: businessId })
+    (import.meta.env.VITE_AUTH_PROVIDER === "supabase"
+      ? listProductCategories(businessId)
+      : base44.entities.ProductCategory.filter({ business_id: businessId }))
       .then(setItems)
       .catch(() => setItems([]))
       .finally(() => setLoading(false));

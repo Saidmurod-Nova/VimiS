@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseMode } from "@/lib/supabase";
+import { updateBusiness } from "@/lib/supabaseCatalog";
 import CategorySelect from "../CategorySelect";
 import LogoUpload from "../LogoUpload";
 import { TextInput } from "../VimiInput";
@@ -23,10 +25,11 @@ export default function SettingsTab({ business, onUpdated }) {
     e.preventDefault();
     setSaving(true);
     try {
-      const updated = await base44.entities.Business.update(business.id, {
+      const patch = {
         name: name.trim(), description, category_id: categoryId, category_name: categoryName, logo_url: logoUrl,
         low_stock_threshold: Math.max(0, Number(threshold) || 0)
-      });
+      };
+      const updated = isSupabaseMode ? await updateBusiness(business.id, patch) : await base44.entities.Business.update(business.id, patch);
       onUpdated(updated);
       toast({ title: "Sozlamalar saqlandi" });
     } catch { toast({ title: "Saqlanmadi", variant: "destructive" }); } finally { setSaving(false); }
@@ -35,7 +38,8 @@ export default function SettingsTab({ business, onUpdated }) {
   const toggleActive = async () => {
     setConfirmActive(false); setSaving(true);
     try {
-      const updated = await base44.entities.Business.update(business.id, { is_active: !business.is_active });
+      const patch = { is_active: !business.is_active };
+      const updated = isSupabaseMode ? await updateBusiness(business.id, patch) : await base44.entities.Business.update(business.id, patch);
       onUpdated(updated);
       toast({ title: updated.is_active ? "Biznes faollashtirildi" : "Biznes faolsizlantirildi" });
     } catch {} finally { setSaving(false); }

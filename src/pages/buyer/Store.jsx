@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseMode } from "@/lib/supabase";
+import { getPublicBusinessByStoreId, listBranches, getBranchCatalogSupabase } from "@/lib/supabaseCatalog";
 import { Store as StoreIcon, MapPin, Navigation2, Map, SlidersHorizontal, Package } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import BottomSheet from "@/components/vimi/BottomSheet";
@@ -38,12 +40,17 @@ export default function Store() {
     (async () => {
       setLoading(true); setNotFound(false); setInactive(false); setBusiness(null); setBranches([]); setSelectedBranchId(null);
       try {
-        const list = await base44.entities.Business.filter({ store_id: storeId });
-        const b = list && list[0];
+        let b;
+        if (isSupabaseMode) {
+          b = await getPublicBusinessByStoreId(storeId);
+        } else {
+          const list = await base44.entities.Business.filter({ store_id: storeId });
+          b = list && list[0];
+        }
         if (!b) { setNotFound(true); return; }
         setBusiness(b);
         if (!b.is_active) { setInactive(true); return; }
-        const br = await base44.entities.Branch.filter({ business_id: b.id });
+        const br = isSupabaseMode ? await listBranches(b.id) : await base44.entities.Branch.filter({ business_id: b.id });
         const active = (br || []).filter((x) => x.is_active);
         setBranches(active);
         let initial = null;
@@ -66,9 +73,11 @@ export default function Store() {
   useEffect(() => {
     if (!selectedBranchId || !business) return;
     setCatalogLoading(true); setCatalogError(""); setCatalog(null);
-    base44.functions.invoke("getBranchCatalog", { branch_id: selectedBranchId })
-      .then((res) => setCatalog(res.data))
-      .catch((err) => setCatalogError(err?.response?.data?.error || "Katalog yuklanmadi"))
+    const request = isSupabaseMode
+      ? getBranchCatalogSupabase(selectedBranchId)
+      : base44.functions.invoke("getBranchCatalog", { branch_id: selectedBranchId }).then((res) => res.data);
+    request.then(setCatalog)
+      .catch((err) => setCatalogError(err?.response?.data?.error || err?.message || "Katalog yuklanmadi"))
       .finally(() => setCatalogLoading(false));
   }, [selectedBranchId, business]);
 

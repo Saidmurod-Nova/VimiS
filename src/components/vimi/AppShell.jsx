@@ -118,7 +118,6 @@ export default function AppShell() {
         </div>
       </nav>
 
-      <NotificationBell />
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-4 pb-28 pt-6 sm:px-6 lg:pb-12">
           <Outlet />

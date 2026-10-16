@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { createBranch as createBranchSupabase } from "@/lib/supabaseCatalog";
 import PageHeader from "@/components/vimi/PageHeader";
 import BranchForm from "@/components/vimi/BranchForm";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,7 +17,8 @@ export default function BranchCreate() {
     const payload = { business_id: id, name: data.name, address: data.address, phone: data.phone, working_hours: data.working_hours, latitude: data.latitude, longitude: data.longitude };
     if (data.geo) { payload.geo_area_id = data.geo.geo_area_id; payload.country = data.geo.country; payload.region = data.geo.region; payload.city = data.geo.city; payload.district = data.geo.district; }
     try {
-      await base44.functions.invoke("createBranch", payload);
+      if (import.meta.env.VITE_AUTH_PROVIDER === "supabase") await createBranchSupabase(payload);
+      else await base44.functions.invoke("createBranch", payload);
       toast({ title: "Filial yaratildi" });
       navigate(`/seller/businesses/${id}`);
     } catch (err) {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { MapPin, Plus, Loader2, CheckCircle2, ShoppingBag, ChevronRight } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import Price from "@/components/vimi/Price";
@@ -9,11 +9,15 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/vimi/States";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/CartContext";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseMode } from "@/lib/supabase";
+import { checkoutSupabase } from "@/lib/supabaseOrders";
+import { listAddresses } from "@/lib/supabaseRelations";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 
 export default function Checkout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { cart, items, business, branch, subtotal, totalItems, loading, refresh } = useCart();
   const [addresses, setAddresses] = useState(null);
@@ -26,13 +30,14 @@ export default function Checkout() {
   const loadAddresses = async () => {
     setAddrLoading(true); setAddrError("");
     try {
-      const list = await base44.entities.Address.filter({}, "-created_date", 100);
+      const list = isSupabaseMode ? await listAddresses() : await base44.entities.Address.filter({}, "-created_date", 100);
       const sorted = (list || []).slice().sort((a, b) =>
         (b.is_default === true ? 1 : 0) - (a.is_default === true ? 1 : 0) ||
-        new Date(b.created_date) - new Date(a.created_date)
+        new Date(b.created_date || b.created_at) - new Date(a.created_date || a.created_at)
       );
       setAddresses(sorted);
-      const def = sorted.find((a) => a.is_default) || sorted[0] || null;
+      const requested = sorted.find((a) => a.id === location.state?.selectedAddressId);
+      const def = requested || sorted.find((a) => a.is_default) || sorted[0] || null;
       setSelectedAddr(def ? def.id : null);
     } catch (e) {
       setAddrError(e?.response?.data?.error || "Manzillar yuklanmadi");
@@ -43,18 +48,25 @@ export default function Checkout() {
 
   useEffect(() => { loadAddresses(); }, []);
 
+  const addAddress = () => navigate("/addresses/new", { state: { returnTo: "/checkout" } });
+
   const placeOrder = async () => {
     if (!cart) { toast({ title: "Savat bo'sh", variant: "destructive" }); return; }
     if (!selectedAddr) { toast({ title: "Manzilni tanlang", variant: "destructive" }); return; }
     if (submitting) return;
     setSubmitting(true);
     try {
-      const res = await base44.functions.invoke("checkout", {
-        cart_id: cart.id, address_id: selectedAddr, payment_method: "cash_on_delivery", notes
-      });
-      const order = res.data?.order;
+      let order;
+      if (isSupabaseMode) {
+        order = await checkoutSupabase({ cartId: cart.id, addressId: selectedAddr, paymentMethod: "cash_on_delivery", notes });
+      } else {
+        const res = await base44.functions.invoke("checkout", {
+          cart_id: cart.id, address_id: selectedAddr, payment_method: "cash_on_delivery", notes
+        });
+        order = res.data?.order;
+      }
       await refresh();
-      toast({ title: "Buyurtma yaratildi", description: order ? `${order.order_number} · ${order.business_name}` : "" });
+      toast({ title: "Buyurtma yaratildi", description: order ? `${order.order_number} · ${order.business_name || business?.name || ""}` : "" });
       navigate("/orders");
     } catch (e) {
       toast({ title: e?.response?.data?.error || "Buyurtma yaratilmadi", variant: "destructive" });
@@ -99,10 +111,10 @@ export default function Checkout() {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Yetkazib berish manzili</h2>
-          <GhostButton type="button" onClick={() => navigate("/addresses/new")} className="h-8 gap-1 px-2 text-xs"><Plus className="h-3.5 w-3.5" />Yangi</GhostButton>
+          <GhostButton type="button" onClick={addAddress} className="h-8 gap-1 px-2 text-xs"><Plus className="h-3.5 w-3.5" />Yangi</GhostButton>
         </div>
         {addrLoading ? <LoadingState /> : addrError ? <ErrorState title={addrError} onRetry={loadAddresses} /> : !addresses || addresses.length === 0 ? (
-          <EmptyState icon={MapPin} title="Manzillar yo'q" description="Yetkazib berish uchun manzil qo'shing." action={<PrimaryButton onClick={() => navigate("/addresses/new")} className="h-10">Manzil qo'shish</PrimaryButton>} />
+          <EmptyState icon={MapPin} title="Manzillar yo'q" description="Yetkazib berish uchun manzil qo'shing." action={<PrimaryButton onClick={addAddress} className="h-10">Manzil qo'shish</PrimaryButton>} />
         ) : (
           <div className="space-y-2">
             {addresses.map((a) => (

@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { MapPin, Phone, Package, Check, X, Clock, ChefHat, CheckCircle2, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseMode } from "@/lib/supabase";
+import { getSellerOrder } from "@/lib/supabaseRelations";
+import { updateOrderStatusSupabase } from "@/lib/supabaseOrders";
 import PageHeader from "@/components/vimi/PageHeader";
-import OrderStatusBadge, { statusLabel } from "@/components/vimi/OrderStatusBadge";
+import OrderStatusBadge from "@/components/vimi/OrderStatusBadge";
 import Price from "@/components/vimi/Price";
 import { Image } from "@/components/ui/image";
 import { EmptyState, ErrorState, LoadingState } from "@/components/vimi/States";
 import { PrimaryButton, SecondaryButton } from "@/components/vimi/VimiButton";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { formatSoM } from "@/lib/inventory";
 
@@ -18,7 +20,6 @@ import { formatSoM } from "@/lib/inventory";
 // refresh the order. Cancelling offers an optional reason.
 export default function OrderDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -30,8 +31,10 @@ export default function OrderDetail() {
   const fetchOrder = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const res = await base44.functions.invoke("getSellerOrder", { order_id: id });
-      setData(res.data);
+      const result = isSupabaseMode
+        ? await getSellerOrder(id)
+        : (await base44.functions.invoke("getSellerOrder", { order_id: id })).data;
+      setData(result);
     } catch (e) { setError(e); setData(null); }
     finally { setLoading(false); }
   }, [id]);
@@ -41,7 +44,10 @@ export default function OrderDetail() {
   const act = async (action) => {
     setActing(true);
     try {
-      await base44.functions.invoke("updateOrderStatus", { order_id: id, action, reason: action === "cancel" ? reason : undefined });
+      if (isSupabaseMode) {
+        const statuses = { accept: "accepted", prepare: "preparing", complete: "completed", cancel: "cancelled" };
+        await updateOrderStatusSupabase({ orderId: id, status: statuses[action], cancellationReason: action === "cancel" ? reason : "" });
+      } else await base44.functions.invoke("updateOrderStatus", { order_id: id, action, reason: action === "cancel" ? reason : undefined });
       toast({ title: "Buyurtma yangilandi" });
       setCancelOpen(false); setReason("");
       await fetchOrder();
@@ -54,7 +60,7 @@ export default function OrderDetail() {
   if (loading && !data) return <div className="space-y-4"><PageHeader title="Buyurtma" backTo="/seller/orders" /><LoadingState /></div>;
   if (!data?.order) return <div className="space-y-4"><PageHeader title="Buyurtma" backTo="/seller/orders" /><EmptyState title="Buyurtma topilmadi" /></div>;
 
-  const { order, items, branch } = data;
+  const { order, items } = data;
   const status = order.status;
 
   const steps = [

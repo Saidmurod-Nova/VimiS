@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { BarChart3, Plus, ShoppingBag, Store, AlertTriangle, TrendingUp, Clock, CheckCircle2, XCircle, PackageCheck } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/lib/BusinessContext";
 import BusinessSelectorSheet from "@/components/vimi/seller/BusinessSelectorSheet";
 import BranchSelectorSheet from "@/components/vimi/seller/BranchSelectorSheet";
@@ -29,17 +29,63 @@ export default function Home() {
   const [error, setError] = useState(null);
 
   const businessId = selectedBusiness?.id;
+  const resolvedBranchId = branchId === "all" ? null : branchId;
 
   const fetchDashboard = useCallback(async () => {
     if (!businessId) { setData(null); return; }
     setLoading(true); setError(null);
     try {
-      const res = await base44.functions.invoke("getSellerDashboard", { business_id: businessId, branch_id: branchId, range, from, to });
-      setData(res.data);
+      if (!supabase) throw new Error("Supabase client is not configured");
+      const [branchesResult, ordersResult] = await Promise.all([
+        supabase.from("branches").select("*").eq("business_id", businessId),
+        supabase.from("orders").select("*").eq("business_id", businessId).order("created_at", { ascending: false }),
+      ]);
+      if (branchesResult.error) throw branchesResult.error;
+      if (ordersResult.error) throw ordersResult.error;
+
+      const branches = branchesResult.data || [];
+      const orders = (ordersResult.data || []).filter((order) =>
+        !resolvedBranchId || order.branch_id === resolvedBranchId
+      );
+      const now = new Date();
+      const start = from ? new Date(from) : new Date(now);
+      if (!from) {
+        if (range === "today") start.setHours(0, 0, 0, 0);
+        else if (range === "week" || range === "this_week") start.setDate(start.getDate() - 6);
+        else if (range === "month" || range === "this_month") start.setDate(1);
+        else start.setTime(0);
+      }
+      const end = to ? new Date(to) : now;
+      if (to) end.setHours(23, 59, 59, 999);
+      const periodOrders = orders.filter((order) => {
+        const createdAt = new Date(order.created_at || order.createdAt);
+        return !Number.isNaN(createdAt.getTime()) && createdAt >= start && createdAt <= end;
+      });
+      const statusOf = (order) => String(order.status || "").toLowerCase();
+      const countStatus = (statuses) => orders.filter((order) => statuses.includes(statusOf(order))).length;
+      const completedStatuses = ["completed", "complete", "delivered"];
+      const totalSales = periodOrders.reduce((sum, order) => {
+        if (!completedStatuses.includes(statusOf(order))) return sum;
+        return sum + Number(order.total_amount ?? order.total ?? order.amount ?? 0);
+      }, 0);
+      setData({
+        branches,
+        metrics: {
+          totalSales,
+          totalOrders: periodOrders.length,
+          pending: countStatus(["pending"]),
+          preparing: countStatus(["preparing", "processing"]),
+          completed: countStatus(completedStatuses),
+          cancelled: countStatus(["cancelled", "canceled"]),
+        },
+        recentOrders: orders.slice(0, 5),
+        inventory: { threshold: 5 },
+        range: { label: range === "today" ? "Bugun" : range },
+      });
     } catch (e) {
       setError(e); setData(null);
     } finally { setLoading(false); }
-  }, [businessId, branchId, range, from, to]);
+  }, [businessId, resolvedBranchId, range, from, to]);
 
   useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
 
@@ -84,19 +130,7 @@ export default function Home() {
       {/* Header: business + branch + date + stats */}
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          {businesses.length > 1 ? (
-            <BusinessSelectorSheet businesses={businesses} selectedBusiness={selectedBusiness} onSelect={selectBusiness} />
-          ) : (
-            <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-border bg-card p-2 pr-3">
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Store className="h-4 w-4" aria-hidden="true" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-foreground">{selectedBusiness.name}</span>
-                <span className="block truncate text-xs text-muted-foreground">{selectedBusiness.store_id}</span>
-              </span>
-            </div>
-          )}
+          <BusinessSelectorSheet businesses={businesses} selectedBusiness={selectedBusiness} onSelect={selectBusiness} />
           <SecondaryButton className="h-auto shrink-0 px-3 py-2.5" onClick={() => navigate("/seller/statistics")}>
             <BarChart3 className="mr-1 h-4 w-4" />Statistika
           </SecondaryButton>

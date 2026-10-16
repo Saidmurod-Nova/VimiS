@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { uploadVimiImage } from "@/lib/supabaseStorage";
 import { Image } from "@/components/ui/image";
 import { Upload, Loader2, Package, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,9 +14,16 @@ export default function ProductImageUpload({ value, onChange, className }) {
     if (!file) return;
     setLoading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
-      onChange(file_url);
-    } catch {
+      if (import.meta.env.VITE_STORAGE_PROVIDER === "supabase") {
+        const { publicUrl } = await uploadVimiImage(file, "products");
+        onChange(publicUrl);
+      } else {
+        const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+        onChange(file_url);
+      }
+    } catch (error) {
+      console.error("Rasm yuklash xatosi:", error);
+      window.alert(error?.message || "Rasmni yuklab bo'lmadi.");
     } finally {
       setLoading(false);
       if (inputRef.current) inputRef.current.value = "";

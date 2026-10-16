@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { signInWithGoogleSupabase } from "@/lib/supabaseOAuth";
 import { Label } from "@/components/ui/label";
 import { User, Phone, Mail, Lock, Loader2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -21,6 +23,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const useSupabaseAuth = import.meta.env.VITE_AUTH_PROVIDER === "supabase";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,10 +34,29 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      await base44.auth.register({ email, password });
-      setShowOtp(true);
+      if (useSupabaseAuth) {
+        if (!isSupabaseConfigured) throw new Error("Supabase konfiguratsiyasi topilmadi.");
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: fullName, phone } },
+        });
+        if (signUpError) throw signUpError;
+        if (data.session) {
+            const { error: profileError } = await supabase.from('profiles')
+              .update({ full_name: fullName.trim(), phone: phone.trim() })
+              .eq('id', data.user.id);
+            if (profileError) throw profileError;
+          window.location.assign(safeReturnTo());
+        } else {
+          setShowOtp(true);
+        }
+      } else {
+        await base44.auth.register({ email, password });
+        setShowOtp(true);
+      }
     } catch (err) {
-      setError(err.message || "Ro'yxatdan o'tish amalga oshmadi");
+        setError(getAuthErrorMessage(err, "Ro‘yxatdan o‘tish amalga oshmadi. Ma’lumotlarni tekshirib qayta urinib ko‘ring."));
     } finally {
       setLoading(false);
     }
@@ -44,14 +66,24 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
-      const result = await base44.auth.verifyOtp({ email, otpCode });
-      if (result?.access_token) base44.auth.setToken(result.access_token);
-      try {
-        await base44.auth.updateMe({ full_name: fullName, phone });
-      } catch (_) {}
-      window.location.href = safeReturnTo();
+      if (useSupabaseAuth) {
+        const { data, error: verifyError } = await supabase.auth.verifyOtp({ email, token: otpCode, type: 'signup' });
+        if (verifyError) throw verifyError;
+        if (data.user) {
+          const { error: profileError } = await supabase.from('profiles')
+            .update({ full_name: fullName.trim(), phone: phone.trim() })
+            .eq('id', data.user.id);
+          if (profileError) throw profileError;
+        }
+        window.location.assign(safeReturnTo());
+      } else {
+        const result = await base44.auth.verifyOtp({ email, otpCode });
+        if (result?.access_token) base44.auth.setToken(result.access_token);
+        try { await base44.auth.updateMe({ full_name: fullName, phone }); } catch (_) {}
+        window.location.href = safeReturnTo();
+      }
     } catch (err) {
-      setError(err.message || "Tasdiqlash kodi noto'g'ri");
+        setError(getAuthErrorMessage(err, "Tasdiqlash kodi noto‘g‘ri yoki muddati tugagan."));
     } finally {
       setLoading(false);
     }
@@ -60,14 +92,27 @@ export default function Register() {
   const handleResend = async () => {
     setError("");
     try {
-      await base44.auth.resendOtp(email);
+      if (useSupabaseAuth) {
+        const { error: resendError } = await supabase.auth.resend({ type: 'signup', email });
+        if (resendError) throw resendError;
+      } else {
+        await base44.auth.resendOtp(email);
+      }
       toast({ title: "Kod yuborildi", description: "Emailingizni tekshiring." });
     } catch (err) {
-      setError(err.message || "Kodni qayta yuborib bo'lmadi");
+        setError(getAuthErrorMessage(err, "Kodni qayta yuborib bo‘lmadi. Birozdan keyin qayta urinib ko‘ring."));
     }
   };
 
-  const handleGoogle = () => base44.auth.loginWithProvider("google", safeReturnTo());
+  const handleGoogle = async () => {
+    setError("");
+    try {
+      if (useSupabaseAuth) await signInWithGoogleSupabase(safeReturnTo());
+      else base44.auth.loginWithProvider("google", safeReturnTo());
+    } catch (err) {
+      setError(err?.message || "Google orqali kirish amalga oshmadi");
+    }
+  };
 
   if (showOtp) {
     return (

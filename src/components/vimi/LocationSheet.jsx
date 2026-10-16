@@ -24,7 +24,13 @@ export default function LocationSheet({ open, onOpenChange }) {
       toast({ title: "Joylashuv aniqlandi", description: [loc.city, loc.region].filter(Boolean).join(", ") });
       onOpenChange?.(false);
     } catch (e) {
-      toast({ title: "Ruxsat berilmadi", description: "Qo'lda tanlashda davom eting." });
+      const permissionDenied = e?.code === 1 || e?.name === "NotAllowedError";
+      toast({
+        title: permissionDenied ? "Ruxsat berilmadi" : "Joylashuvni aniqlab bo'lmadi",
+        description: permissionDenied
+          ? "Brauzer sozlamalarida joylashuvga ruxsat bering yoki qo'lda tanlang."
+          : "Iltimos, qayta urinib ko'ring yoki qo'lda tanlang.",
+      });
     } finally {
       setDetecting(false);
     }

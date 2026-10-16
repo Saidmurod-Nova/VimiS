@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { signInWithGoogleSupabase } from "@/lib/supabaseOAuth";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
@@ -15,22 +17,38 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const returnTo = safeReturnTo();
+  const useSupabaseAuth = import.meta.env.VITE_AUTH_PROVIDER === "supabase";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      await base44.auth.loginViaEmailPassword(email, password);
-      window.location.href = returnTo;
+      if (useSupabaseAuth) {
+        if (!isSupabaseConfigured) throw new Error("Supabase konfiguratsiyasi topilmadi.");
+        const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+        if (authError) throw authError;
+        window.location.assign(returnTo);
+      } else {
+        await base44.auth.loginViaEmailPassword(email, password);
+        window.location.href = returnTo;
+      }
     } catch (err) {
-      setError("Email yoki parol noto'g'ri");
+        setError(getAuthErrorMessage(err, "Kirish amalga oshmadi. Ma’lumotlarni tekshirib, qayta urinib ko‘ring."));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogle = () => base44.auth.loginWithProvider("google", returnTo);
+  const handleGoogle = async () => {
+    setError("");
+    try {
+      if (useSupabaseAuth) await signInWithGoogleSupabase(returnTo);
+      else base44.auth.loginWithProvider("google", returnTo);
+    } catch (err) {
+        setError(getAuthErrorMessage(err, "Google orqali kirish amalga oshmadi. Qayta urinib ko‘ring."));
+    }
+  };
 
   return (
     <AuthLayout

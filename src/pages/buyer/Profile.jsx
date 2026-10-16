@@ -8,7 +8,7 @@ import { useBuyer } from "@/lib/BuyerContext";
 
 export default function Profile() {
   const { user, logout } = useAuth();
-  const { selectedLocation, setLocation } = useBuyer();
+  const { selectedLocation } = useBuyer();
   const navigate = useNavigate();
   const locLabel = selectedLocation?.city || selectedLocation?.region || "Joylashuv tanlanmagan";
 
@@ -28,8 +28,8 @@ export default function Profile() {
       </div>
 
       <SettingsList>
-        <SettingsRow icon={Pencil} label="Profilni tahrirlash" onClick={() => {}} />
-        <SettingsRow icon={MapPinned} label="Manzillar" onClick={() => {}} />
+        <SettingsRow icon={Pencil} label="Profilni tahrirlash" onClick={() => navigate("/profile/edit")} />
+        <SettingsRow icon={MapPinned} label="Joylashuvlar" onClick={() => navigate("/locations", { state: { from: "/profile" } })} />
         <SettingsRow icon={Briefcase} label="Mening bizneslarim" onClick={() => {}} />
       </SettingsList>
 

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { listMyBusinesses } from "@/lib/supabaseCatalog";
 
 const BusinessContext = createContext(null);
 const STORAGE_KEY = "vimi:selectedBusiness";
@@ -19,7 +20,10 @@ export function BusinessProvider({ children }) {
     }
     setLoading(true);
     try {
-      const list = await base44.entities.Business.filter({ created_by_id: user.id }, "-created_date", 100);
+      const useSupabase = import.meta.env.VITE_AUTH_PROVIDER === "supabase";
+      const list = useSupabase
+        ? await listMyBusinesses()
+        : await base44.entities.Business.filter({ created_by_id: user.id }, "-created_date", 100);
       setBusinesses(list || []);
       setSelectedId((prev) => {
         if (prev && (list || []).some((b) => b.id === prev)) return prev;

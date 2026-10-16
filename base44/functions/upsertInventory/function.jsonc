@@ -1,0 +1,4 @@
+{
+  "name": "upsertInventory",
+  "entry": "entry.ts"
+}

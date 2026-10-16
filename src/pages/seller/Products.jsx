@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { listProducts, listBusinessInventory, listProductCategories } from "@/lib/supabaseCatalog";
 import { useBusiness } from "@/lib/BusinessContext";
 import { Plus, Tag, Package, Store } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
@@ -32,7 +33,12 @@ export default function Products() {
   useEffect(() => {
     if (!biz) { setProducts([]); setInventory([]); setCategories([]); setLoading(false); return; }
     setLoading(true);
-    Promise.all([
+    const useSupabase = import.meta.env.VITE_AUTH_PROVIDER === "supabase";
+    Promise.all(useSupabase ? [
+      listProducts({ businessId: biz.id, includeInactive: true, limit: 200 }),
+      listBusinessInventory(biz.id),
+      listProductCategories(biz.id)
+    ] : [
       base44.entities.Product.filter({ business_id: biz.id }, "-created_date", 200),
       base44.entities.BranchInventory.filter({ business_id: biz.id }),
       base44.entities.ProductCategory.filter({ business_id: biz.id })

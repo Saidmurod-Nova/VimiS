@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useBusiness } from "@/lib/BusinessContext";
+import { isSupabaseMode } from "@/lib/supabase";
+import { createProductCategory, deleteProductCategory, updateProductCategory } from "@/lib/supabaseRelations";
+import { listProductCategories, listProducts } from "@/lib/supabaseCatalog";
 import { useToast } from "@/components/ui/use-toast";
 import { Plus, Pencil, Trash2, Tag, Loader2, Check } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
-import { PrimaryButton, SecondaryButton, GhostButton, IconButton } from "@/components/vimi/VimiButton";
+import { PrimaryButton, IconButton } from "@/components/vimi/VimiButton";
 import { TextInput } from "@/components/vimi/VimiInput";
 import { LoadingState, EmptyState } from "@/components/vimi/States";
-import { Label } from "@/components/ui/label";
 
 export default function Categories() {
-  const navigate = useNavigate();
   const { selectedBusiness: biz, loading: bizLoading } = useBusiness();
   const { toast } = useToast();
   const [categories, setCategories] = useState([]);
@@ -26,7 +26,10 @@ export default function Categories() {
   const load = () => {
     if (!biz) { setCategories([]); setProducts([]); setLoading(false); return; }
     setLoading(true);
-    Promise.all([
+    Promise.all(isSupabaseMode ? [
+      listProductCategories(biz.id),
+      listProducts({ businessId: biz.id, includeInactive: true, limit: 200 })
+    ] : [
       base44.entities.ProductCategory.filter({ business_id: biz.id }, "name"),
       base44.entities.Product.filter({ business_id: biz.id }, "-created_date", 200)
     ]).then(([c, p]) => { setCategories(c || []); setProducts(p || []); })
@@ -43,7 +46,8 @@ export default function Categories() {
     if (!newName.trim()) return;
     setCreating(true);
     try {
-      await base44.entities.ProductCategory.create({ business_id: biz.id, name: newName.trim() });
+      if (isSupabaseMode) await createProductCategory(biz.id, newName);
+      else await base44.entities.ProductCategory.create({ business_id: biz.id, name: newName.trim() });
       setNewName("");
       load();
     } catch (err) {
@@ -55,7 +59,8 @@ export default function Categories() {
     if (!editName.trim()) return;
     setSavingId(catId);
     try {
-      await base44.entities.ProductCategory.update(catId, { name: editName.trim() });
+      if (isSupabaseMode) await updateProductCategory(catId, editName);
+      else await base44.entities.ProductCategory.update(catId, { name: editName.trim() });
       setCategories((prev) => prev.map((c) => (c.id === catId ? { ...c, name: editName.trim() } : c)));
       setEditingId(null);
     } catch (err) {
@@ -70,7 +75,8 @@ export default function Categories() {
       return;
     }
     try {
-      await base44.entities.ProductCategory.delete(cat.id);
+      if (isSupabaseMode) await deleteProductCategory(cat.id);
+      else await base44.entities.ProductCategory.delete(cat.id);
       setCategories((prev) => prev.filter((c) => c.id !== cat.id));
     } catch (err) {
       toast({ title: err.message || "O'chirilmadi", variant: "destructive" });

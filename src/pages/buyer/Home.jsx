@@ -13,6 +13,8 @@ import { EmptyState, LoadingState } from "@/components/vimi/States";
 import { useAuth } from "@/lib/AuthContext";
 import { useBuyer } from "@/lib/BuyerContext";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseMode } from "@/lib/supabase";
+import { listPublicCategories, listProducts } from "@/lib/supabaseCatalog";
 import { useToast } from "@/components/ui/use-toast";
 
 function SectionHeader({ title, action }) {
@@ -37,8 +39,16 @@ export default function Home() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    base44.entities.Category.list().then(setCategories).catch(() => {});
-    base44.entities.Product.filter({ is_active: true }, "-created_date", 8).then(setProducts).catch(() => {});
+    let active = true;
+    if (isSupabaseMode) {
+      Promise.all([listPublicCategories(), listProducts({ limit: 8 })])
+        .then(([cats, prods]) => { if (active) { setCategories(cats || []); setProducts(prods || []); } })
+        .catch((err) => { console.error('Supabase buyer home load failed', err); });
+    } else {
+      base44.entities.Category.list().then((rows) => { if (active) setCategories(rows || []); }).catch(() => {});
+      base44.entities.Product.filter({ is_active: true }, "-created_date", 8).then((rows) => { if (active) setProducts(rows || []); }).catch(() => {});
+    }
+    return () => { active = false; };
   }, []);
 
   const onConnect = async (e) => {
@@ -67,7 +77,7 @@ export default function Home() {
   };
 
   const locLabel = selectedLocation?.city || selectedLocation?.region || "Joylashuv tanlang";
-  const recentlyVisited = stores.items.filter((i) => i.saved.last_visited_at).sort((a, b) => new Date(b.saved.last_visited_at) - new Date(a.saved.last_visited_at));
+  const recentlyVisited = stores.items.filter((i) => i.saved.last_visited_at).sort((a, b) => new Date(b.saved.last_visited_at).getTime() - new Date(a.saved.last_visited_at).getTime());
   const favorites = stores.favorites;
 
   return (
@@ -103,7 +113,7 @@ export default function Home() {
             onChange={(e) => setStoreCode(e.target.value)}
             className="flex-1"
           />
-          <PrimaryButton type="submit" className="h-12 shrink-0" disabled={connecting}>
+          <PrimaryButton type="submit" className="h-12 shrink-0"  disabled={connecting}>
             <ArrowRight className="mr-1 h-4 w-4" aria-hidden="true" />
             Kirish
           </PrimaryButton>

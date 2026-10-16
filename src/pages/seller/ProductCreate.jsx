@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { createProduct } from "@/lib/supabaseCatalog";
 import { useBusiness } from "@/lib/BusinessContext";
 import { useToast } from "@/components/ui/use-toast";
 import ProductForm from "@/components/vimi/ProductForm";
@@ -20,9 +21,15 @@ export default function ProductCreate() {
   );
 
   const submit = async (data) => {
-    const res = await base44.functions.invoke("createProduct", { business_id: biz.id, ...data });
+    let product;
+    if (import.meta.env.VITE_AUTH_PROVIDER === "supabase") {
+      product = await createProduct({ business_id: biz.id, ...data });
+    } else {
+      const res = await base44.functions.invoke("createProduct", { business_id: biz.id, ...data });
+      product = res.data.product;
+    }
     toast({ title: "Mahsulot yaratildi" });
-    navigate(`/seller/products/${res.data.product.id}`);
+    navigate(`/seller/products/${product.id}`);
   };
 
   return <ProductForm businessId={biz.id} onSubmit={submit} submitLabel="Mahsulot yaratish" backTo="/seller/products" />;

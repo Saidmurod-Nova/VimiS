@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useBusiness } from "@/lib/BusinessContext";
 import { generateUniqueStoreId } from "@/lib/storeId";
+import { createBusiness as createBusinessSupabase, generateUniqueStoreIdSupabase } from "@/lib/supabaseCatalog";
 import { Loader2 } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import CategorySelect from "@/components/vimi/CategorySelect";
@@ -14,7 +15,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 export default function BusinessCreate() {
   const navigate = useNavigate();
-  const { refresh } = useBusiness();
+  const { refresh, selectBusiness } = useBusiness();
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -31,12 +32,12 @@ export default function BusinessCreate() {
     if (!categoryId) { setError("Kategoriya majburiy"); return; }
     setLoading(true);
     try {
-      const storeId = await generateUniqueStoreId(base44, name);
-      const business = await base44.entities.Business.create({
-        name: name.trim(), description, logo_url: logoUrl, category_id: categoryId,
-        category_name: categoryName, store_id: storeId, is_active: true
-      });
+      const useSupabase = import.meta.env.VITE_AUTH_PROVIDER === "supabase";
+      const storeId = useSupabase ? await generateUniqueStoreIdSupabase(name) : await generateUniqueStoreId(base44, name);
+      const payload = { name: name.trim(), description, logo_url: logoUrl, category_id: categoryId, category_name: categoryName, store_id: storeId, is_active: true };
+      const business = useSupabase ? await createBusinessSupabase(payload) : await base44.entities.Business.create(payload);
       await refresh();
+      selectBusiness(business.id);
       toast({ title: "Biznes yaratildi", description: `Store ID: ${storeId}` });
       navigate(`/seller/businesses/${business.id}`);
     } catch (err) {

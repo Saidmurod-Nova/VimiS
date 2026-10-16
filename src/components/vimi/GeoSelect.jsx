@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
@@ -14,12 +14,20 @@ export default function GeoSelect({ onChange }) {
   useEffect(() => {
     (async () => {
       try {
-        const list = await base44.entities.GeoArea.filter({ type: "country" });
+        const { data: list, error } = await supabase
+          .from("geo_areas")
+          .select("*")
+          .eq("type", "country");
+        if (error) throw error;
         setCountries(list || []);
         if (list && list[0]) {
           const c = list[0];
           setCountry(c.id);
-          const rs = await base44.entities.GeoArea.filter({ parent_id: c.id });
+          const { data: rs, error: regionsError } = await supabase
+            .from("geo_areas")
+            .select("*")
+            .eq("parent_id", c.id);
+          if (regionsError) throw regionsError;
           setRegions(rs || []);
           emit(c.id, null, null, [c], []);
         }
@@ -42,13 +50,21 @@ export default function GeoSelect({ onChange }) {
 
   const onCountry = async (v) => {
     setCountry(v); setRegion(null); setCity(null); setCities([]);
-    const rs = await base44.entities.GeoArea.filter({ parent_id: v });
+    const { data: rs, error } = await supabase
+      .from("geo_areas")
+      .select("*")
+      .eq("parent_id", v);
+    if (error) throw error;
     setRegions(rs || []);
     emit(v, null, null, countries, rs || []);
   };
   const onRegion = async (v) => {
     setRegion(v); setCity(null);
-    const cis = await base44.entities.GeoArea.filter({ parent_id: v });
+    const { data: cis, error } = await supabase
+      .from("geo_areas")
+      .select("*")
+      .eq("parent_id", v);
+    if (error) throw error;
     setCities(cis || []);
     emit(country, v, null, countries, regions, cis || []);
   };

@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { getProduct, updateProduct } from "@/lib/supabaseCatalog";
 import { useToast } from "@/components/ui/use-toast";
 import { useEffect, useState } from "react";
 import ProductForm from "@/components/vimi/ProductForm";
@@ -15,11 +16,13 @@ export default function ProductEdit() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.entities.Product.get(id).then(setProduct).catch(() => setProduct(null)).finally(() => setLoading(false));
+    (import.meta.env.VITE_AUTH_PROVIDER === "supabase" ? getProduct(id) : base44.entities.Product.get(id))
+      .then(setProduct).catch(() => setProduct(null)).finally(() => setLoading(false));
   }, [id]);
 
   const submit = async (data) => {
-    await base44.functions.invoke("updateProduct", { product_id: id, ...data });
+    if (import.meta.env.VITE_AUTH_PROVIDER === "supabase") await updateProduct(id, data);
+    else await base44.functions.invoke("updateProduct", { product_id: id, ...data });
     toast({ title: "Mahsulot yangilandi" });
     navigate(`/seller/products/${id}`);
   };

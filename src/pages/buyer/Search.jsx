@@ -6,6 +6,8 @@ import SearchStoreCard from "@/components/vimi/SearchStoreCard";
 import SearchProductCard from "@/components/vimi/SearchProductCard";
 import { EmptyState, ErrorState } from "@/components/vimi/States";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseMode } from "@/lib/supabase";
+import { searchPublicCatalog } from "@/lib/supabaseCatalog";
 import { cn } from "@/lib/utils";
 
 const FILTERS = [
@@ -31,8 +33,13 @@ export default function Search() {
     setLoading(true); setError("");
     debounceRef.current = setTimeout(async () => {
       try {
-        const res = await base44.functions.invoke("searchCatalog", { q });
-        setData(res.data || { businesses: [], products: [] });
+        if (isSupabaseMode) {
+          const result = await searchPublicCatalog(q);
+          setData(result || { businesses: [], products: [] });
+        } else {
+          const res = await base44.functions.invoke("searchCatalog", { q });
+          setData(res.data || { businesses: [], products: [] });
+        }
       } catch (err) {
         setError(err?.response?.data?.error || "Qidiruvda xatolik");
       } finally {

@@ -12,9 +12,12 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import AuthCallback from '@/pages/AuthCallback';
 import BuyerHome from '@/pages/buyer/Home';
 import BuyerOrders from '@/pages/buyer/Orders';
 import BuyerProfile from '@/pages/buyer/Profile';
+import ProfileEdit from '@/pages/ProfileEdit';
+import Locations from '@/pages/Locations';
 import SellerHome from '@/pages/seller/Home';
 import SellerProducts from '@/pages/seller/Products';
 import ProductCreate from '@/pages/seller/ProductCreate';
@@ -38,7 +41,6 @@ import BuyerBranch from '@/pages/buyer/BuyerBranch';
 import { BusinessProvider } from '@/lib/BusinessContext';
 import { BuyerProvider } from '@/lib/BuyerContext';
 import Search from '@/pages/buyer/Search';
-import Notifications from '@/pages/Notifications';
 import Cart from '@/pages/buyer/Cart';
 import Checkout from '@/pages/buyer/Checkout';
 import Addresses from '@/pages/buyer/Addresses';
@@ -78,6 +80,7 @@ const AuthenticatedApp = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
           <Route element={<AppShell />}>
             <Route path="/" element={<BuyerHome />} />
@@ -87,14 +90,15 @@ const AuthenticatedApp = () => {
             <Route path="/branch/:branchId/products/:productId" element={<BuyerProductDetail />} />
             <Route path="/product/:productId" element={<BuyerProductDetail />} />
             <Route path="/search" element={<Search />} />
-            <Route path="/notifications" element={<Notifications />} />
             <Route path="/orders" element={<BuyerOrders />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/addresses" element={<Addresses />} />
             <Route path="/addresses/new" element={<AddressEdit />} />
             <Route path="/addresses/:id/edit" element={<AddressEdit />} />
+            <Route path="/locations" element={<Locations />} />
             <Route path="/profile" element={<BuyerProfile />} />
+            <Route path="/profile/edit" element={<ProfileEdit />} />
             <Route path="/seller" element={<SellerHome />} />
             <Route path="/seller/businesses/new" element={<BusinessCreate />} />
             <Route path="/seller/businesses/:id" element={<BusinessProfile />} />

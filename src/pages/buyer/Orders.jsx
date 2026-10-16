@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ShoppingBag } from "lucide-react";
 import moment from "moment";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase";
 import OrderCard from "@/components/vimi/OrderCard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/vimi/States";
 import { PrimaryButton } from "@/components/vimi/VimiButton";
@@ -26,8 +26,20 @@ export default function Orders() {
   const load = async () => {
     setLoading(true); setError("");
     try {
-      const res = await base44.functions.invoke("getMyOrders", {});
-      setOrders(res.data?.orders || []);
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user) {
+        setOrders([]);
+        return;
+      }
+
+      const { data, error: ordersError } = await supabase
+        .from("orders")
+        .select("id, order_number, status, total, item_count, business_name, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (ordersError) throw ordersError;
+      setOrders(data || []);
     } catch (e) {
       setError(e?.response?.data?.error || "Buyurtmalar yuklanmadi");
     } finally {
@@ -51,7 +63,7 @@ export default function Orders() {
               status={STATUS_LABELS[o.status] || o.status}
               total={fmtMoney(o.total)}
               items={`${o.item_count} ta mahsulot · ${o.business_name || ""}`}
-              date={moment(o.created_date).format("DD.MM.YYYY HH:mm")}
+              date={moment(o.created_at).format("DD.MM.YYYY HH:mm")}
             />
           ))}
         </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useBusiness } from "@/lib/BusinessContext";
 import { Plus } from "lucide-react";
@@ -10,9 +10,11 @@ import SettingsTab from "@/components/vimi/business/SettingsTab";
 import { SecondaryButton } from "@/components/vimi/VimiButton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LoadingState, EmptyState } from "@/components/vimi/States";
+import { supabase } from "@/lib/supabase";
 
 export default function BusinessProfile() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { selectBusiness } = useBusiness();
   const [business, setBusiness] = useState(null);
@@ -23,10 +25,10 @@ export default function BusinessProfile() {
     (async () => {
       setLoading(true);
       try {
-        const b = await base44.entities.Business.get(id);
-        setBusiness(b);
-        const br = await base44.entities.Branch.filter({ business_id: id });
-        setBranches(br || []);
+        const b = await supabase.from("businesses").select("*").eq("id", id).single();
+        setBusiness(b.data);
+        const br = await supabase.from("branches").select("*").eq("business_id", id);
+        setBranches(br.data || []);
         selectBusiness(id);
       } catch {} finally { setLoading(false); }
     })();
@@ -39,7 +41,7 @@ export default function BusinessProfile() {
     <div className="animate-fade-in space-y-6">
       <PageHeader title={business.name} backTo="/seller" action={<SecondaryButton className="h-10" onClick={() => navigate(`/seller/businesses/${id}/branches/new`)}><Plus className="mr-1 h-4 w-4" />Filial</SecondaryButton>} />
       <BusinessHeader business={business} branchCount={branches.length} />
-      <Tabs defaultValue="branches">
+      <Tabs defaultValue={searchParams.get("tab") === "settings" ? "settings" : "branches"}>
         <TabsList className="w-full">
           <TabsTrigger value="branches" className="flex-1">Filiallar</TabsTrigger>
           <TabsTrigger value="settings" className="flex-1">Sozlamalar</TabsTrigger>

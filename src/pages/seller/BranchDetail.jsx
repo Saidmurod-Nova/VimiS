@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
 import { MapPin, Phone, Clock, Navigation2, Pencil, Package } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import StatusBadge from "@/components/vimi/StatusBadge";
@@ -10,6 +9,7 @@ import { SecondaryButton } from "@/components/vimi/VimiButton";
 import { useToast } from "@/components/ui/use-toast";
 import { LoadingState, EmptyState } from "@/components/vimi/States";
 import { openInMaps } from "@/lib/maps";
+import { supabase } from "@/lib/supabase";
 
 export default function BranchDetail() {
   const { id, branchId } = useParams();
@@ -21,14 +21,33 @@ export default function BranchDetail() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    (async () => { setLoading(true); try { setBranch(await base44.entities.Branch.get(branchId)); } catch {} finally { setLoading(false); } })();
-  }, [branchId]);
+    (async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.from("branches").select("*").eq("id", branchId).single();
+        if (error) throw error;
+        setBranch(data ?? null);
+      } catch (err) {
+        console.error(err);
+        setBranch(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [id]);
 
   const toggleActive = async () => {
     setConfirm(false); setSaving(true);
     try {
-      const res = await base44.functions.invoke("updateBranch", { branch_id: branchId, is_active: !branch.is_active });
-      setBranch(res.data?.branch || res.branch);
+      const { data, error } = await supabase
+        .from("branches")
+        .update({ is_active: !branch.is_active })
+        .eq("id", branchId)
+        .select()
+        .single();
+      if (error) throw error;
+      setBranch(data);
       toast({ title: branch.is_active ? "Filial faolsizlantirildi" : "Filial faollashtirildi" });
     } catch { toast({ title: "Amalga oshmadi", variant: "destructive" }); } finally { setSaving(false); }
   };

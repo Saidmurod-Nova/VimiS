@@ -1,12 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { requireSupabase } from "@/lib/supabase";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
 export default function CategorySelect({ value, onChange, label = "Kategoriya" }) {
   const [items, setItems] = useState([]);
   useEffect(() => {
-    base44.entities.Category.list().then(setItems).catch(() => {});
+    if (import.meta.env.VITE_AUTH_PROVIDER === "supabase") {
+      const client = requireSupabase();
+      client.from('categories').select('id,name').order('name').then(({ data, error }) => {
+        if (!error) setItems(data || []);
+        else console.error('Kategoriyalarni yuklab bo‘lmadi', error);
+      });
+    } else {
+      base44.entities.Category.list().then(setItems).catch(() => {});
+    }
   }, []);
   return (
     <div className="space-y-2">

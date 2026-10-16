@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import { isSupabaseMode, requireSupabase } from "@/lib/supabase";
 
 // Great-circle distance in km between two {lat, lng} points.
 export function haversineKm(a, b) {
@@ -13,7 +14,14 @@ export function haversineKm(a, b) {
 // active branch to the given coordinates and derives the location from it.
 // Returns null when no branches with coordinates are available.
 export async function detectNearestLocation(coords) {
-  const branches = await base44.entities.Branch.filter({ is_active: true }, "-created_date", 200);
+  let branches;
+  if (isSupabaseMode) {
+    const { data, error } = await requireSupabase().from("branches").select("*").eq("is_active", true).limit(200);
+    if (error) throw new Error(error.message || "Filiallarni yuklab bo‘lmadi.");
+    branches = data;
+  } else {
+    branches = await base44.entities.Branch.filter({ is_active: true }, "-created_date", 200);
+  }
   let best = null;
   let bestD = Infinity;
   for (const b of (branches || [])) {

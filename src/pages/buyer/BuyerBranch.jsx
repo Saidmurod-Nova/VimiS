@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseMode } from "@/lib/supabase";
+import { getBranch as getBranchSupabase } from "@/lib/supabaseCatalog";
 import { MapPin, Phone, Clock, Navigation2, AlertCircle } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import StatusBadge from "@/components/vimi/StatusBadge";
@@ -17,7 +19,10 @@ export default function BuyerBranch() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => { try { setBranch(await base44.entities.Branch.get(branchId)); } catch {} finally { setLoading(false); } })();
+    (async () => {
+      try { setBranch(isSupabaseMode ? await getBranchSupabase(branchId) : await base44.entities.Branch.get(branchId)); }
+      catch {} finally { setLoading(false); }
+    })();
   }, [branchId]);
 
   if (loading) return <div className="space-y-4"><PageHeader title="Filial" backTo="/" /><LoadingState /></div>;

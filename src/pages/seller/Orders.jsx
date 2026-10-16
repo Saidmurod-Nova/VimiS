@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ShoppingBag } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/lib/BusinessContext";
 import PageHeader from "@/components/vimi/PageHeader";
 import BranchSelectorSheet from "@/components/vimi/seller/BranchSelectorSheet";
@@ -37,8 +37,24 @@ export default function Orders() {
     if (!businessId) return;
     setLoading(true); setError(null);
     try {
-      const res = await base44.functions.invoke("getSellerOrders", { status: status || undefined, branch_id: branchId === "all" ? undefined : branchId });
-      setData(res.data);
+      let ordersQuery = supabase
+        .from("orders")
+        .select("id, order_number, status, buyer_name_snapshot, branch_name, item_count, created_at, total")
+        .eq("business_id", businessId)
+        .order("created_at", { ascending: false });
+      if (status) ordersQuery = ordersQuery.eq("status", status);
+      if (branchId !== "all") ordersQuery = ordersQuery.eq("branch_id", branchId);
+
+      const [{ data: branches, error: branchesError }, { data: orders, error: ordersError }] = await Promise.all([
+        supabase.from("branches").select("id, name").eq("business_id", businessId),
+        ordersQuery,
+      ]);
+      if (branchesError) throw branchesError;
+      if (ordersError) throw ordersError;
+      setData({
+        branches: branches || [],
+        orders: (orders || []).map((order) => ({ ...order, created_date: order.created_at })),
+      });
     } catch (e) { setError(e); setData(null); }
     finally { setLoading(false); }
   }, [businessId, status, branchId]);

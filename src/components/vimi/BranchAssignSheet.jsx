@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { isSupabaseMode } from "@/lib/supabase";
+import { upsertInventoryForBranch } from "@/lib/supabaseCatalog";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { PrimaryButton } from "@/components/vimi/VimiButton";
 
@@ -23,7 +24,8 @@ export default function BranchAssignSheet({ open, onOpenChange, product, branche
     setSaving(true);
     try {
       for (const branchId of selected) {
-        await base44.functions.invoke("upsertInventory", {
+        if (isSupabaseMode) await upsertInventoryForBranch({ branchId, productId: product.id, stock: 0, isAvailable: true });
+        else await base44.functions.invoke("upsertInventory", {
           branch_id: branchId, product_id: product.id, stock: 0, is_available: true
         });
       }

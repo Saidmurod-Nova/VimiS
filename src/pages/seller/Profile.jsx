@@ -1,13 +1,19 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Store, RefreshCw, LogOut, Briefcase, Bell } from "lucide-react";
+import { Store, RefreshCw, LogOut, Briefcase, Bell, MapPinned, Settings } from "lucide-react";
 import Avatar from "@/components/vimi/Avatar";
 import { SettingsList, SettingsRow } from "@/components/vimi/SettingsList";
 import { useAuth } from "@/lib/AuthContext";
+import { useBusiness } from "@/lib/BusinessContext";
 
 export default function Profile() {
   const { user, logout } = useAuth();
+  const { selectedBusiness } = useBusiness();
   const navigate = useNavigate();
+  const openBusiness = (tab) => {
+    if (!selectedBusiness) { navigate("/seller"); return; }
+    navigate(`/seller/businesses/${selectedBusiness.id}${tab ? `?tab=${tab}` : ""}`);
+  };
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -22,8 +28,10 @@ export default function Profile() {
       </div>
 
       <SettingsList>
-        <SettingsRow icon={Store} label="Bizneslarim" onClick={() => {}} />
-        <SettingsRow icon={Briefcase} label="Filiallar" onClick={() => {}} />
+        <SettingsRow icon={Store} label="Bizneslarim" onClick={() => navigate("/seller")} />
+        <SettingsRow icon={Briefcase} label="Filiallar" onClick={() => openBusiness()} />
+        <SettingsRow icon={MapPinned} label="Joylashuvlar" onClick={() => navigate("/locations", { state: { from: "/seller/profile" } })} />
+        <SettingsRow icon={Settings} label="Biznes sozlamalari" onClick={() => openBusiness("settings")} />
         <SettingsRow icon={Bell} label="Bildirishnomalar" onClick={() => {}} />
       </SettingsList>
 

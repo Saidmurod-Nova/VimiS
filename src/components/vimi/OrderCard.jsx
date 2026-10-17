@@ -1,13 +1,19 @@
 import React from "react";
 import { ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import Badge from "./Badge";
 
 export default function OrderCard({ number, status, total, date, items, onClick, className }) {
+  const navigate = useNavigate();
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={(event) => {
+        onClick?.(event);
+        navigate(`/orders/${number}`);
+      }}
       className={cn("flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left transition active:scale-[0.99]", className)}
     >
       <span className="min-w-0 flex-1">

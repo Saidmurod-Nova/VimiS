@@ -46,7 +46,7 @@ import Checkout from '@/pages/buyer/Checkout';
 import Addresses from '@/pages/buyer/Addresses';
 import AddressEdit from '@/pages/buyer/AddressEdit';
 import { CartProvider } from '@/lib/CartContext';
-import { BuyerOrderDetail } from '@/pages/buyer/OrderDetail';
+import BuyerOrderDetail from '@/pages/buyer/OrderDetail';
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 

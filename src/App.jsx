@@ -46,7 +46,7 @@ import Checkout from '@/pages/buyer/Checkout';
 import Addresses from '@/pages/buyer/Addresses';
 import AddressEdit from '@/pages/buyer/AddressEdit';
 import { CartProvider } from '@/lib/CartContext';
-
+import { BuyerOrderDetail } from '@/pages/buyer/OrderDetail';
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
@@ -91,6 +91,7 @@ const AuthenticatedApp = () => {
             <Route path="/product/:productId" element={<BuyerProductDetail />} />
             <Route path="/search" element={<Search />} />
             <Route path="/orders" element={<BuyerOrders />} />
+            <Route path="/orders/:id" element={<BuyerOrderDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/addresses" element={<Addresses />} />

@@ -6,7 +6,7 @@ const BuyerContext = createContext(null);
 const LOC_KEY = "vimi:selectedLocation";
 
 export function BuyerProvider({ children }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, updateUser } = useAuth();
   const [selectedLocation, setSelectedLocation] = useState(() => {
     try { return JSON.parse(localStorage.getItem(LOC_KEY)) || null; } catch { return null; }
   });
@@ -57,16 +57,19 @@ export function BuyerProvider({ children }) {
 
   // Load persisted location preference from the user record (server-side) once available.
   useEffect(() => {
-    if (user && user.selected_location) setSelectedLocation(user.selected_location);
-  }, [user]);
+    if (user?.selected_location) {
+      setSelectedLocation(user.selected_location);
+      localStorage.setItem(LOC_KEY, JSON.stringify(user.selected_location));
+    }
+  }, [user?.id, user?.selected_location]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
   const setLocation = useCallback(async (loc) => {
+    if (user) await updateUser({ selected_location: loc });
     setSelectedLocation(loc);
     if (loc) localStorage.setItem(LOC_KEY, JSON.stringify(loc)); else localStorage.removeItem(LOC_KEY);
-    if (user) { try { await supabase.from("profiles").update({ selected_location: loc }).eq("id", user.id); } catch {} }
-  }, [user]);
+  }, [user, updateUser]);
 
   const connectStore = useCallback(async (storeId) => {
     if (!user) throw new Error("Authentication required");

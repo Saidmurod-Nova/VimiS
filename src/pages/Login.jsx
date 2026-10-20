@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { getAuthErrorMessage, isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { signInWithGoogleSupabase } from "@/lib/supabaseOAuth";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, Loader2 } from "lucide-react";

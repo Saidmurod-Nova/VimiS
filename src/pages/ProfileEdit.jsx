@@ -7,6 +7,7 @@ import { PrimaryButton } from "@/components/vimi/VimiButton";
 import { TextInput } from "@/components/vimi/VimiInput";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
+import { formatUzbekPhone, isValidUzbekPhone, normalizeUzbekPhone } from "@/lib/phone";
 
 export default function ProfileEdit() {
   const { user, updateUser } = useAuth();
@@ -31,14 +32,14 @@ export default function ProfileEdit() {
       setError("Ism kamida 2 ta belgidan iborat bo‘lishi kerak.");
       return;
     }
-    if (cleanPhone && !/^\+?[0-9 ()-]{7,20}$/.test(cleanPhone)) {
-      setError("Telefon raqamini tekshiring.");
+    if (!isValidUzbekPhone(cleanPhone)) {
+      setError("Telefon raqamini +998 formatida to‘liq kiriting.");
       return;
     }
 
     setSaving(true);
     try {
-      await updateUser({ full_name: cleanName, phone: cleanPhone });
+      await updateUser({ full_name: cleanName, phone: normalizeUzbekPhone(cleanPhone) });
       toast({ title: "Profil saqlandi", description: "Ma’lumotlaringiz yangilandi." });
       navigate("/profile");
     } catch (err) {
@@ -64,7 +65,7 @@ export default function ProfileEdit() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="profile-phone">Telefon raqami</Label>
-          <TextInput id="profile-phone" icon={Phone} type="tel" inputMode="tel" autoComplete="tel" placeholder="+998 90 123 45 67" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
+          <TextInput id="profile-phone" icon={Phone} type="tel" inputMode="tel" autoComplete="tel" placeholder="+998 90 123 45 67" value={phone} onChange={(e) => setPhone(formatUzbekPhone(e.target.value))} maxLength={17} required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="profile-email">Email</Label>

@@ -34,6 +34,7 @@ import { isSupabaseConfigured, supabase, getAuthProvider, getAuthErrorMessage } 
  * @property {() => void} navigateToLogin
  * @property {() => Promise<void>} checkUserAuth
  * @property {() => Promise<void>} checkAppState
+ * @property {(updates?: Record<string, any>) => Promise<void>} updateUser
  */
 
 const defaultAuthContext = /** @type {AuthContextValue} */ ({
@@ -48,6 +49,7 @@ const defaultAuthContext = /** @type {AuthContextValue} */ ({
   navigateToLogin: () => {},
   checkUserAuth: async () => {},
   checkAppState: async () => {},
+  updateUser: async () => {},
 });
 
 const AuthContext = createContext(defaultAuthContext);
@@ -225,7 +227,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = async (updates = {}) => {
-    const allowedFields = ['full_name', 'phone', 'avatar'];
+    const allowedFields = ['full_name', 'phone', 'avatar', 'selected_location'];
     const safeUpdates = Object.fromEntries(
       allowedFields
         .filter((field) => Object.prototype.hasOwnProperty.call(updates, field))

@@ -45,7 +45,14 @@ export default function LocationSheet({ open, onOpenChange }) {
         </PrimaryButton>
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="mb-3 text-xs text-muted-foreground">Yoki qo'lda tanlang</p>
-          <GeoSelect onChange={(loc) => { setLocation(loc); }} />
+          <GeoSelect onChange={async (loc) => {
+            try {
+              await setLocation(loc);
+              onOpenChange?.(false);
+            } catch {
+              toast({ title: "Joylashuvni saqlab bo‘lmadi", variant: "destructive" });
+            }
+          }} />
         </div>
         {selectedLocation && (
           <SecondaryButton type="button" className="h-12 w-full" onClick={() => { setLocation(null); onOpenChange?.(false); }}>

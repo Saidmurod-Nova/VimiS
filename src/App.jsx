@@ -47,6 +47,10 @@ import Addresses from '@/pages/buyer/Addresses';
 import AddressEdit from '@/pages/buyer/AddressEdit';
 import { CartProvider } from '@/lib/CartContext';
 import BuyerOrderDetail from '@/pages/buyer/OrderDetail';
+import BuyerCatalog from '@/pages/buyer/Catalog';
+import ProfileSetupGate from '@/components/vimi/ProfileSetupGate';
+import { ThemeProvider } from '@/lib/ThemeContext';
+import AdminRoute from '@/components/AdminRoute';
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
@@ -81,9 +85,12 @@ const AuthenticatedApp = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+          <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+          <Route path="/admin" element={<AdminRoute />} />
+          <Route element={<ProfileSetupGate />}>
           <Route element={<AppShell />}>
             <Route path="/" element={<BuyerHome />} />
+            <Route path="/catalog" element={<BuyerCatalog />} />
             <Route path="/store/:storeId" element={<Store />} />
             <Route path="/branch/:branchId" element={<BuyerBranch />} />
             <Route path="/branch/:branchId/products" element={<BuyerBranchProducts />} />
@@ -117,6 +124,7 @@ const AuthenticatedApp = () => {
             <Route path="/seller/orders" element={<SellerOrders />} />
             <Route path="/seller/orders/:id" element={<SellerOrderDetail />} />
           </Route>
+          </Route>
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>
@@ -130,6 +138,7 @@ const AuthenticatedApp = () => {
 function App() {
 
   return (
+    <ThemeProvider>
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
@@ -139,6 +148,7 @@ function App() {
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
+    </ThemeProvider>
   )
 }
 

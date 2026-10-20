@@ -21,7 +21,7 @@ export const supabase = isSupabaseConfigured
 
 export function getAuthProvider() {
   return import.meta.env.VITE_AUTH_PROVIDER === 'supabase' ? 'supabase' : 'base44';
-}
+} 
 
 export function getAuthErrorMessage(error, fallback = 'Xatolik yuz berdi.') {
   if (!error) return fallback;

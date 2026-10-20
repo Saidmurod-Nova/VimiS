@@ -44,12 +44,17 @@ export default function Categories() {
   const create = async (e) => {
     e.preventDefault();
     if (!newName.trim()) return;
+    if (categories.some((category) => category.name.localeCompare(newName.trim(), undefined, { sensitivity: "base" }) === 0)) {
+      toast({ title: "Bu kategoriya allaqachon mavjud", variant: "destructive" });
+      return;
+    }
     setCreating(true);
     try {
-      if (isSupabaseMode) await createProductCategory(biz.id, newName);
-      else await base44.entities.ProductCategory.create({ business_id: biz.id, name: newName.trim() });
+      const created = isSupabaseMode
+        ? await createProductCategory(biz.id, newName)
+        : await base44.entities.ProductCategory.create({ business_id: biz.id, name: newName.trim() });
+      setCategories((current) => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
       setNewName("");
-      load();
     } catch (err) {
       toast({ title: err.message || "Kategoriya yaratilmadi", variant: "destructive" });
     } finally { setCreating(false); }
@@ -90,8 +95,8 @@ export default function Categories() {
     <div className="animate-fade-in space-y-5">
       <PageHeader title="Kategoriyalar" backTo="/seller/products" />
       <form onSubmit={create} className="flex items-center gap-2">
-        <TextInput value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Yangi kategoriya nomi" />
-        <PrimaryButton className="h-12 px-4" disabled={creating}>{creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}</PrimaryButton>
+        <TextInput value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Yangi kategoriya nomi" maxLength={60} required />
+        <PrimaryButton type="submit" aria-label="Kategoriya qo‘shish" className="h-12 px-4" disabled={creating}>{creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}</PrimaryButton>
       </form>
 
       {categories.length === 0 ? (

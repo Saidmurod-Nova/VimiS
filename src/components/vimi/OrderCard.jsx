@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import Badge from "./Badge";
 
-export default function OrderCard({ number, status, total, date, items, onClick, className }) {
+export default function OrderCard({ orderId, number, status, total, date, items, onClick, className }) {
   const navigate = useNavigate();
 
   return (
@@ -12,7 +12,7 @@ export default function OrderCard({ number, status, total, date, items, onClick,
       type="button"
       onClick={(event) => {
         onClick?.(event);
-        navigate(`/orders/${number}`);
+        navigate(`/orders/${orderId}`);
       }}
       className={cn("flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left transition active:scale-[0.99]", className)}
     >

@@ -1,19 +1,20 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ShoppingBag } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { requireSupabase } from "@/lib/supabase";
 import { useBusiness } from "@/lib/BusinessContext";
 import PageHeader from "@/components/vimi/PageHeader";
 import BranchSelectorSheet from "@/components/vimi/seller/BranchSelectorSheet";
 import OrderStatusBadge from "@/components/vimi/OrderStatusBadge";
 import Price from "@/components/vimi/Price";
-import { EmptyState, ErrorState, LoadingState } from "@/components/vimi/States";
+import { EmptyState, ErrorState } from "@/components/vimi/States";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 const STATUS_FILTERS = [
   { key: "", label: "Barchasi" },
   { key: "pending", label: "Kutilmoqda" },
+  { key: "accepted", label: "Qabul qilindi" },
   { key: "preparing", label: "Tayyorlanmoqda" },
   { key: "completed", label: "Yakunlandi" },
   { key: "cancelled", label: "Bekor" },
@@ -26,7 +27,7 @@ export default function Orders() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [branchId, setBranchId] = useState("all");
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(/** @type {{ branches: any[], orders: any[] } | null} */ (null));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -37,7 +38,8 @@ export default function Orders() {
     if (!businessId) return;
     setLoading(true); setError(null);
     try {
-      let ordersQuery = supabase
+      const client = requireSupabase();
+      let ordersQuery = client
         .from("orders")
         .select("id, order_number, status, buyer_name_snapshot, branch_name, item_count, created_at, total")
         .eq("business_id", businessId)
@@ -46,7 +48,7 @@ export default function Orders() {
       if (branchId !== "all") ordersQuery = ordersQuery.eq("branch_id", branchId);
 
       const [{ data: branches, error: branchesError }, { data: orders, error: ordersError }] = await Promise.all([
-        supabase.from("branches").select("id, name").eq("business_id", businessId),
+        client.from("branches").select("id, name").eq("business_id", businessId),
         ordersQuery,
       ]);
       if (branchesError) throw branchesError;
@@ -62,7 +64,7 @@ export default function Orders() {
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
   useEffect(() => { setBranchId("all"); }, [businessId]);
 
-  const setStatus = (s) => {
+  const setStatus = (s = "") => {
     if (s) setSearchParams({ status: s }); else setSearchParams({});
   };
 

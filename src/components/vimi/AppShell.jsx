@@ -1,13 +1,15 @@
 import React from "react";
 import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
-import { Home, ShoppingBag, User, Package, Store, RefreshCw } from "lucide-react";
+import { Home, ShoppingBag, User, Package, Store, RefreshCw, Sun, Moon, LayoutGrid, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import VimiLogo from "./VimiLogo";
-import NotificationBell from "./NotificationBell";
 import { useBusiness } from "@/lib/BusinessContext";
+import { useTheme } from "@/lib/ThemeContext";
+import { useAuth } from "@/lib/AuthContext";
 
 const buyerNav = [
   { to: "/", label: "Bosh sahifa", icon: Home },
+  { to: "/catalog", label: "Katalog", icon: LayoutGrid },
   { to: "/orders", label: "Buyurtmalar", icon: ShoppingBag },
   { to: "/profile", label: "Profil", icon: User },
 ];
@@ -15,8 +17,25 @@ const buyerNav = [
 const sellerNav = [
   { to: "/seller", label: "Bosh sahifa", icon: Store },
   { to: "/seller/products", label: "Mahsulotlar", icon: Package },
+  { to: "/seller/orders", label: "Buyurtmalar", icon: ShoppingBag },
   { to: "/seller/profile", label: "Profil", icon: User },
 ];
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  const Icon = theme === "dark" ? Sun : Moon;
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label={theme === "dark" ? "Yorug‘ mavzuga o‘tish" : "Qorong‘i mavzuga o‘tish"}
+      title={theme === "dark" ? "Yorug‘ mavzu" : "Qorong‘i mavzu"}
+      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-foreground transition hover:bg-secondary"
+    >
+      <Icon className="h-4 w-4" aria-hidden="true" />
+    </button>
+  );
+}
 
 function isActive(pathname, to) {
   return pathname === to || (to !== "/" && to !== "/seller" && pathname.startsWith(to + "/"));
@@ -92,8 +111,10 @@ function CurrentBusiness() {
 
 export default function AppShell() {
   const { pathname } = useLocation();
+  const { user } = useAuth();
   const isSeller = pathname.startsWith("/seller");
-  const nav = isSeller ? sellerNav : buyerNav;
+  const baseNav = isSeller ? sellerNav : buyerNav;
+  const nav = user?.role === "admin" ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }, ...baseNav] : baseNav;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -101,12 +122,16 @@ export default function AppShell() {
         <div className="px-2">
           <VimiLogo showTagline />
         </div>
-        <nav className="mt-8 flex flex-col gap-1">
+        <nav className="mt-8 flex flex-1 flex-col gap-1">
           {nav.map((item) => (
             <NavItem key={item.to} {...item} active={isActive(pathname, item.to)} />
           ))}
         </nav>
         {isSeller && <CurrentBusiness />}
+        <div className="mt-4 mb-3 flex items-center gap-3 px-1">
+          <ThemeToggle />
+          <span className="text-sm text-muted-foreground">Ko‘rinish</span>
+        </div>
         <ModeSwitcher isSeller={isSeller} />
       </aside>
 
@@ -120,6 +145,7 @@ export default function AppShell() {
 
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-4 pb-28 pt-6 sm:px-6 lg:pb-12">
+          <div className="mb-3 flex justify-end lg:hidden"><ThemeToggle /></div>
           <Outlet />
         </div>
       </main>

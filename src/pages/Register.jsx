@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { getAuthErrorMessage, isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { signInWithGoogleSupabase } from "@/lib/supabaseOAuth";
 import { Label } from "@/components/ui/label";
 import { User, Phone, Mail, Lock, Loader2 } from "lucide-react";
@@ -12,6 +12,7 @@ import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { PrimaryButton, SecondaryButton } from "@/components/vimi/VimiButton";
 import { TextInput } from "@/components/vimi/VimiInput";
+import { formatUzbekPhone, isValidUzbekPhone, normalizeUzbekPhone } from "@/lib/phone";
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
@@ -32,6 +33,10 @@ export default function Register() {
       setError("Parollar mos kelmadi");
       return;
     }
+    if (!isValidUzbekPhone(phone)) {
+      setError("Telefon raqamini +998 formatida to‘liq kiriting.");
+      return;
+    }
     setLoading(true);
     try {
       if (useSupabaseAuth) {
@@ -39,12 +44,12 @@ export default function Register() {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName, phone } },
+          options: { data: { full_name: fullName, phone: normalizeUzbekPhone(phone) } },
         });
         if (signUpError) throw signUpError;
         if (data.session) {
             const { error: profileError } = await supabase.from('profiles')
-              .update({ full_name: fullName.trim(), phone: phone.trim() })
+              .update({ full_name: fullName.trim(), phone: normalizeUzbekPhone(phone) })
               .eq('id', data.user.id);
             if (profileError) throw profileError;
           window.location.assign(safeReturnTo());
@@ -71,7 +76,7 @@ export default function Register() {
         if (verifyError) throw verifyError;
         if (data.user) {
           const { error: profileError } = await supabase.from('profiles')
-            .update({ full_name: fullName.trim(), phone: phone.trim() })
+            .update({ full_name: fullName.trim(), phone: normalizeUzbekPhone(phone) })
             .eq('id', data.user.id);
           if (profileError) throw profileError;
         }
@@ -79,7 +84,7 @@ export default function Register() {
       } else {
         const result = await base44.auth.verifyOtp({ email, otpCode });
         if (result?.access_token) base44.auth.setToken(result.access_token);
-        try { await base44.auth.updateMe({ full_name: fullName, phone }); } catch (_) {}
+        try { await base44.auth.updateMe({ full_name: fullName, phone: normalizeUzbekPhone(phone) }); } catch (_) {}
         window.location.href = safeReturnTo();
       }
     } catch (err) {
@@ -204,8 +209,9 @@ export default function Register() {
             autoComplete="tel"
             placeholder="+998 90 123 45 67"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => setPhone(formatUzbekPhone(e.target.value))}
             icon={Phone}
+            maxLength={17}
             required
           />
         </div>

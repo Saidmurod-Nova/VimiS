@@ -35,9 +35,16 @@ export default function BuyerOrderDetail() {
     setLoading(true);
     setError(null);
     try {
-      const result = isSupabaseMode
+      const response = isSupabaseMode
         ? await getBuyerOrder(id)
-        : (await base44.functions.invoke("getMyOrder", { order_id: id })).data;
+        : await base44.functions.invoke("getMyOrder", { order_id: id });
+      const result = response?.data ?? response;
+      console.log("Order detail response:", {
+        orderId: id,
+        source: isSupabaseMode ? "Supabase" : "Base44",
+        response,
+        result,
+      });
       setData(result || null);
     } catch (e) {
       setError(e?.response?.data?.error || "Buyurtma yuklanmadi");

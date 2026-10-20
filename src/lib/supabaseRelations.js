@@ -90,12 +90,16 @@ export async function deleteProductCategory(categoryId) {
 }
 
 export async function getBuyerOrder(orderId) {
+  
   const client = requireSupabase();
   const { data: order, error } = await client.from('orders').select('*').eq('id', String(orderId)).maybeSingle();
   fail(error, 'Buyurtmani yuklab bo‘lmadi.');
+  console.log("Order loaded:", { orderId, order });
   if (!order) return null;
+  
   const { data: items, error: itemsError } = await client.from('order_items').select('*')
     .eq('order_id', order.id).order('created_at', { ascending: true });
+  console.log("Order items loaded:", { orderId, items, itemsError });
   fail(itemsError, 'Buyurtma mahsulotlarini yuklab bo‘lmadi.');
   return { order: { ...order, created_date: order.created_at }, items: items || [] };
 }

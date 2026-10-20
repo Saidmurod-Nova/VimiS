@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="220" viewBox="0 0 800 220" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">VimiS logo</title>
+  <desc id="desc">Neon turquoise VimiS symbol and wordmark on a transparent background.</desc>
+  <defs>
+    <linearGradient id="aqua" x1="45" y1="20" x2="185" y2="190" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00F5C8"/>
+      <stop offset="1" stop-color="#00DDBE"/>
+    </linearGradient>
+  </defs>
+  <!-- Four-point spark above a sharp, open V: a simplified brand mark -->
+  <path d="M108 10 L124 49 L164 64 L124 79 L108 119 L92 79 L52 64 L92 49 Z" fill="url(#aqua)"/>
+  <path d="M55 103 H78 L108 166 L138 103 H161 L108 204 Z" fill="url(#aqua)"/>
+  <!-- Wordmark; geometric sans-serif with a distinctive angular S -->
+  <g fill="url(#aqua)">
+    <path d="M226 64 H250 L280 142 L310 64 H334 L292 166 H268 Z"/>
+    <rect x="357" y="91" width="19" height="75" rx="2"/>
+    <circle cx="366.5" cy="69" r="10"/>
+    <path d="M402 91 H422 V101 C429 93 439 88 451 88 C466 88 477 95 482 107 C490 95 503 88 519 88 C543 88 557 104 557 129 V166 H536 V132 C536 116 529 108 516 108 C502 108 493 119 493 134 V166 H472 V132 C472 116 465 108 452 108 C438 108 429 119 429 134 V166 H408 V112 C408 104 406 97 402 91 Z"/>
+    <rect x="579" y="91" width="19" height="75" rx="2"/>
+    <circle cx="588.5" cy="69" r="10"/>
+    <path d="M704 91 H625 L616 112 H682 C691 112 696 117 696 124 C696 131 691 135 682 135 H640 C620 135 608 146 608 162 V166 H698 L707 145 H634 C631 145 629 143 629 140 C629 137 632 135 636 135 H682 C704 135 717 123 717 106 C717 97 712 91 704 91 Z"/>
+  </g>
+</svg>

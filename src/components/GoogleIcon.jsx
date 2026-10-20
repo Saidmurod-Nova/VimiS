@@ -1,5 +1,5 @@
 import React from "react";
-
+// This component is a simple SVG representation of the Google logo, which can be used as an icon in various parts of the application. It accepts a `className` prop to allow for custom styling, with a default size of 5x5 units. The SVG consists of four colored paths that together form the recognizable Google "G" logo.
 export default function GoogleIcon({ className = "w-5 h-5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">

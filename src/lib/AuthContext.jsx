@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useCallback } fr
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { isSupabaseConfigured, supabase, getAuthProvider, getAuthErrorMessage } from '@/lib/supabase';
+import { registerCurrentSession } from '@/lib/qrSessions';
 
 /**
  * @typedef {object} AuthProfile
@@ -178,8 +179,14 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     /** @type {{ unsubscribe?: () => void } | undefined} */
     let subscription;
+    let sessionRegistration = Promise.resolve();
     if (useSupabaseAuth && isSupabaseConfigured && supabase) {
       const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.refresh_token) {
+          sessionRegistration = sessionRegistration
+            .then(() => registerCurrentSession(session.refresh_token))
+            .catch(() => {});
+        }
         if (event === 'INITIAL_SESSION') return;
         try {
           if (!session?.user) {

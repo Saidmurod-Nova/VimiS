@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { getAuthErrorMessage, isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { signInWithGoogleSupabase } from "@/lib/supabaseOAuth";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, ScanLine } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
@@ -71,6 +71,7 @@ export default function Login() {
         Google bilan davom etish
       </SecondaryButton>
 
+
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-border" />
@@ -113,7 +114,7 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             icon={Lock}
             required
-          />
+            />
         </div>
         <PrimaryButton type="submit" className="h-12 w-full" disabled={loading}>
           {loading ? (
@@ -125,6 +126,15 @@ export default function Login() {
             "Kirish"
           )}
         </PrimaryButton>
+          {useSupabaseAuth && (
+            <Link
+              to={`/login/scan${returnTo !== "/" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`}
+              className="mt-5 flex items-center justify-center gap-2 text-sm font-medium text-primary hover:underline"
+            >
+              <ScanLine className="h-4 w-4" aria-hidden="true" />
+              Skaner qilib kirish
+            </Link>
+          )}
       </form>
     </AuthLayout>
   );

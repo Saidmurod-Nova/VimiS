@@ -9,6 +9,7 @@ import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/vimi/AppShell';
 import Login from '@/pages/Login';
+import ScanLogin from '@/pages/ScanLogin';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
@@ -81,6 +82,7 @@ const AuthenticatedApp = () => {
     <CartProvider>
     <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/login/scan" element={<ScanLogin />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />

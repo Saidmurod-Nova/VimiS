@@ -1,26 +1,27 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { BarChart3, Plus, ShoppingBag, Store, AlertTriangle, TrendingUp, Clock, CheckCircle2, XCircle, PackageCheck } from "lucide-react";
+import { BarChart3, Plus, ShoppingBag, Store, TrendingUp, Clock, CheckCircle2, XCircle, PackageCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/lib/BusinessContext";
-import BusinessSelectorSheet from "@/components/vimi/seller/BusinessSelectorSheet";
-import BranchSelectorSheet from "@/components/vimi/seller/BranchSelectorSheet";
 import DateRangeSelector from "@/components/vimi/seller/DateRangeSelector";
 import RecentOrders from "@/components/vimi/seller/RecentOrders";
 import InventoryAlerts from "@/components/vimi/seller/InventoryAlerts";
 import StatCard from "@/components/vimi/StatCard";
-import Price from "@/components/vimi/Price";
 import { EmptyState, ErrorState, LoadingState } from "@/components/vimi/States";
-import { PrimaryButton, SecondaryButton } from "@/components/vimi/VimiButton";
+import { SecondaryButton } from "@/components/vimi/VimiButton";
 import { formatSoM } from "@/lib/inventory";
 
 // Seller Home = Business Dashboard. Every metric is computed server-side from
 // real order/inventory records for the selected (owned) business and branch.
 export default function Home() {
-  const { businesses, loading: bizLoading, selectedBusiness, selectBusiness } = useBusiness();
+  const {
+    businesses,
+    loading: bizLoading,
+    selectedBusiness,
+    selectedBranchId: branchId,
+  } = useBusiness();
   const navigate = useNavigate();
 
-  const [branchId, setBranchId] = useState("all");
   const [range, setRange] = useState("today");
   const [from, setFrom] = useState(null);
   const [to, setTo] = useState(null);
@@ -89,23 +90,13 @@ export default function Home() {
 
   useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
 
-  // Reset branch scope when switching business.
-  useEffect(() => { setBranchId("all"); }, [businessId]);
-
-  // If the business has a single active branch, select it by default.
-  useEffect(() => {
-    if (data && data.branches && data.branches.filter((b) => b.is_active).length === 1 && branchId === "all") {
-      setBranchId(data.branches.find((b) => b.is_active).id);
-    }
-  }, [data, branchId]);
-
   if (bizLoading) return <LoadingState />;
 
   if (!businesses || businesses.length === 0) {
     return (
       <div className="animate-fade-in space-y-4">
         <h1 className="font-display text-2xl font-semibold tracking-tight">Bizneslarim</h1>
-        <EmptyState icon={Store} title="Bizneslar yo'q" description="Birinchi biznesingizni yarating va filiallarni qo'shing." action={<PrimaryButton className="h-10" onClick={() => navigate("/seller/businesses/new")}><Plus className="mr-1 h-4 w-4" />Biznes yaratish</PrimaryButton>} />
+        <EmptyState icon={Store} title="Bizneslar yo'q" description="Biznes yaratish uchun yuqoridagi tanlash menyusidan foydalaning." />
       </div>
     );
   }
@@ -119,7 +110,6 @@ export default function Home() {
     );
   }
 
-  const activeBranches = (data?.branches || []).filter((b) => b.is_active);
   const hasNoBranches = data && data.branches && data.branches.length === 0;
   const m = data?.metrics || { totalSales: 0, totalOrders: 0, pending: 0, preparing: 0, completed: 0, cancelled: 0 };
 
@@ -127,10 +117,9 @@ export default function Home() {
 
   return (
     <div className="animate-fade-in space-y-5">
-      {/* Header: business + branch + date + stats */}
+      {/* Dashboard filters */}
       <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <BusinessSelectorSheet businesses={businesses} selectedBusiness={selectedBusiness} onSelect={selectBusiness} />
+        <div className="flex items-center justify-end">
           <SecondaryButton className="h-auto shrink-0 px-3 py-2.5" onClick={() => navigate("/seller/statistics")}>
             <BarChart3 className="mr-1 h-4 w-4" />Statistika
           </SecondaryButton>
@@ -138,7 +127,6 @@ export default function Home() {
 
         {!hasNoBranches && (
           <div className="flex flex-wrap items-center gap-2">
-            <BranchSelectorSheet branches={data?.branches || []} selectedId={branchId} onSelect={setBranchId} disabled={!data} />
             <DateRangeSelector range={range} from={from} to={to} onChange={onRangeChange} />
             <span className="ml-auto text-xs text-muted-foreground">{data?.range?.label || ""}</span>
           </div>
@@ -147,7 +135,7 @@ export default function Home() {
 
       {/* No branches onboarding */}
       {hasNoBranches ? (
-        <EmptyState icon={Store} title="Filiallar yo'q" description="Buyurtma qabul qilish uchun kamida bitta filial yarating." action={<PrimaryButton className="h-10" onClick={() => navigate(`/seller/businesses/${selectedBusiness.id}/branches/new`)}><Plus className="mr-1 h-4 w-4" />Filial yaratish</PrimaryButton>} />
+        <EmptyState icon={Store} title="Filiallar yo'q" description="Filial qo‘shish uchun yuqoridagi + tugmasidan foydalaning." />
       ) : error ? (
         <ErrorState onRetry={fetchDashboard} />
       ) : loading && !data ? (

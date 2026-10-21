@@ -9,14 +9,15 @@ import { PrimaryButton } from "../VimiButton";
 // Switches the active business for the seller console. Only owned businesses
 // are listed (BusinessContext already filters by created_by_id). Selecting one
 // refreshes every dashboard metric via the parent's effect.
-export default function BusinessSelectorSheet({ businesses, selectedBusiness, onSelect }) {
+export default function BusinessSelectorSheet({ businesses, selectedBusiness, onSelect, triggerClassName }) {
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();
 
   const trigger = (
     <button
       type="button"
-      className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-border bg-card p-2 pr-3 text-left transition active:scale-[0.99]"
+      aria-label={`Biznesni tanlash: ${selectedBusiness?.name || "Biznes tanlang"}`}
+      className={`flex min-w-0 items-center gap-2.5 rounded-2xl border border-border bg-card p-2 pr-3 text-left transition active:scale-[0.99] ${triggerClassName || ""}`}
     >
       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-secondary">
         {selectedBusiness?.logo_url ? (

@@ -4,7 +4,6 @@ import { ShoppingBag } from "lucide-react";
 import { requireSupabase } from "@/lib/supabase";
 import { useBusiness } from "@/lib/BusinessContext";
 import PageHeader from "@/components/vimi/PageHeader";
-import BranchSelectorSheet from "@/components/vimi/seller/BranchSelectorSheet";
 import OrderStatusBadge from "@/components/vimi/OrderStatusBadge";
 import Price from "@/components/vimi/Price";
 import { EmptyState, ErrorState } from "@/components/vimi/States";
@@ -23,11 +22,10 @@ const STATUS_FILTERS = [
 // Seller order management list. Backed by getSellerOrders (ownership-verified
 // server-side). Status + branch filters; selecting an order opens details.
 export default function Orders() {
-  const { selectedBusiness } = useBusiness();
+  const { selectedBusiness, selectedBranchId: branchId } = useBusiness();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [branchId, setBranchId] = useState("all");
-  const [data, setData] = useState(/** @type {{ branches: any[], orders: any[] } | null} */ (null));
+  const [data, setData] = useState(/** @type {{ orders: any[] } | null} */ (null));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -47,14 +45,9 @@ export default function Orders() {
       if (status) ordersQuery = ordersQuery.eq("status", status);
       if (branchId !== "all") ordersQuery = ordersQuery.eq("branch_id", branchId);
 
-      const [{ data: branches, error: branchesError }, { data: orders, error: ordersError }] = await Promise.all([
-        client.from("branches").select("id, name").eq("business_id", businessId),
-        ordersQuery,
-      ]);
-      if (branchesError) throw branchesError;
+      const { data: orders, error: ordersError } = await ordersQuery;
       if (ordersError) throw ordersError;
       setData({
-        branches: branches || [],
         orders: (orders || []).map((order) => ({ ...order, created_date: order.created_at })),
       });
     } catch (e) { setError(e); setData(null); }
@@ -62,7 +55,6 @@ export default function Orders() {
   }, [businessId, status, branchId]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
-  useEffect(() => { setBranchId("all"); }, [businessId]);
 
   const setStatus = (s = "") => {
     if (s) setSearchParams({ status: s }); else setSearchParams({});
@@ -70,16 +62,12 @@ export default function Orders() {
 
   return (
     <div className="animate-fade-in space-y-5">
-      <PageHeader title="Buyurtmalar" subtitle={selectedBusiness?.name} backTo="/seller" />
+      <PageHeader title="Buyurtmalar" backTo="/seller" />
 
       {!businessId ? (
         <p className="text-sm text-muted-foreground">Avval biznes tanlang.</p>
       ) : (
         <>
-          <div className="flex items-center gap-2">
-            <BranchSelectorSheet branches={data?.branches || []} selectedId={branchId} onSelect={setBranchId} disabled={!data} />
-          </div>
-
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             {STATUS_FILTERS.map((f) => (
               <button

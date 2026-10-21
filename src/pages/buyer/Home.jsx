@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, ChevronRight, Search as SearchIcon, ArrowRight, Store, Sparkles, Heart } from "lucide-react";
-import VimiLogo from "@/components/vimi/VimiLogo";
-import Avatar from "@/components/vimi/Avatar";
 import { TextInput } from "@/components/vimi/VimiInput";
 import { PrimaryButton } from "@/components/vimi/VimiButton";
 import SavedStoreCard from "@/components/vimi/SavedStoreCard";
@@ -10,7 +8,6 @@ import ProductCard from "@/components/vimi/ProductCard";
 import LocationSheet from "@/components/vimi/LocationSheet";
 import ConfirmDialog from "@/components/vimi/ConfirmDialog";
 import { EmptyState, LoadingState } from "@/components/vimi/States";
-import { useAuth } from "@/lib/AuthContext";
 import { useBuyer } from "@/lib/BuyerContext";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseMode } from "@/lib/supabase";
@@ -27,7 +24,6 @@ function SectionHeader({ title, action }) {
 }
 
 export default function Home() {
-  const { user } = useAuth();
   const { stores, loading, connectStore, removeSavedStore, selectedLocation } = useBuyer();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -83,15 +79,11 @@ export default function Home() {
   return (
     <div className="animate-fade-in space-y-6">
       <header className="flex items-center justify-between gap-3">
-        <VimiLogo />
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => setLocOpen(true)} className="inline-flex max-w-[40vw] items-center gap-1.5 rounded-full bg-secondary px-3 py-2 text-sm font-medium text-foreground">
             <MapPin className="w-4 h-4 text-primary" aria-hidden="true" />
             <span className="truncate">{locLabel}</span>
             <ChevronRight className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-          </button>
-          <button type="button" onClick={() => navigate("/profile")} aria-label="Profil">
-            <Avatar name={user?.full_name || "Vimi user"} src={user?.avatar} size={40} />
           </button>
         </div>
       </header>

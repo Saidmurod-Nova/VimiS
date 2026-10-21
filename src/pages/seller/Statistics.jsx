@@ -5,7 +5,6 @@ import { isSupabaseMode } from "@/lib/supabase";
 import { getSellerStatistics } from "@/lib/supabaseStatistics";
 import { useBusiness } from "@/lib/BusinessContext";
 import PageHeader from "@/components/vimi/PageHeader";
-import BranchSelectorSheet from "@/components/vimi/seller/BranchSelectorSheet";
 import DateRangeSelector from "@/components/vimi/seller/DateRangeSelector";
 import RevenueChart from "@/components/vimi/seller/RevenueChart";
 import OrderTrendChart from "@/components/vimi/seller/OrderTrendChart";
@@ -19,10 +18,9 @@ import { formatSoM } from "@/lib/inventory";
 // data; revenue uses completed orders only, AOV guards divide-by-zero, product
 // performance uses immutable OrderItem snapshots.
 export default function Statistics() {
-  const { selectedBusiness } = useBusiness();
+  const { selectedBusiness, selectedBranchId: branchId } = useBusiness();
   const businessId = selectedBusiness?.id;
 
-  const [branchId, setBranchId] = useState("all");
   const [range, setRange] = useState("30d");
   const [from, setFrom] = useState(null);
   const [to, setTo] = useState(null);
@@ -43,7 +41,6 @@ export default function Statistics() {
   }, [businessId, branchId, range, from, to]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
-  useEffect(() => { setBranchId("all"); }, [businessId]);
 
   if (!businessId) {
     return (
@@ -60,10 +57,9 @@ export default function Statistics() {
 
   return (
     <div className="animate-fade-in space-y-5">
-      <PageHeader title="Statistika" subtitle={selectedBusiness?.name} backTo="/seller" />
+      <PageHeader title="Statistika" backTo="/seller" />
 
       <div className="flex flex-wrap items-center gap-2">
-        <BranchSelectorSheet branches={data?.branches || []} selectedId={branchId} onSelect={setBranchId} disabled={!data} />
         <DateRangeSelector range={range} from={from} to={to} onChange={onRangeChange} />
         <span className="ml-auto text-xs text-muted-foreground">{data?.range?.label || ""}</span>
       </div>

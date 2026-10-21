@@ -11,6 +11,11 @@ export function BusinessProvider({ children }) {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(() => localStorage.getItem(STORAGE_KEY) || null);
+  const [selectedBranchId, setSelectedBranchId] = useState("all");
+
+  useEffect(() => {
+    setSelectedBranchId("all");
+  }, [selectedId]);
 
   const refresh = useCallback(async () => {
     if (!isAuthenticated || !user) {
@@ -50,7 +55,16 @@ export function BusinessProvider({ children }) {
 
   return (
     <BusinessContext.Provider
-      value={{ businesses, loading, selectedBusiness, selectedId, selectBusiness, refresh }}
+      value={{
+        businesses,
+        loading,
+        selectedBusiness,
+        selectedId,
+        selectBusiness,
+        selectedBranchId,
+        selectBranch: setSelectedBranchId,
+        refresh,
+      }}
     >
       {children}
     </BusinessContext.Provider>

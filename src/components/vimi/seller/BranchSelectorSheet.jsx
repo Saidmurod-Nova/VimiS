@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 // Branch selector for the seller console. Includes an "All branches" option;
 // selecting a specific branch scopes all branch-dependent metrics. When the
 // business has a single active branch it is selected by default upstream.
-export default function BranchSelectorSheet({ branches, selectedId, onSelect, disabled }) {
+export default function BranchSelectorSheet({ branches, selectedId, onSelect, disabled, triggerClassName }) {
   const [open, setOpen] = React.useState(false);
   const selected = selectedId === "all" || !selectedId
     ? null
@@ -16,7 +16,8 @@ export default function BranchSelectorSheet({ branches, selectedId, onSelect, di
     <button
       type="button"
       disabled={disabled}
-      className="flex min-w-0 items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-left text-sm transition active:scale-[0.99] disabled:opacity-50"
+      aria-label={`Filialni tanlash: ${selected ? selected.name : "Barcha filiallar"}`}
+      className={`flex min-w-0 items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-left text-sm transition active:scale-[0.99] disabled:opacity-50 ${triggerClassName || ""}`}
     >
       <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       <span className="min-w-0 flex-1">

@@ -52,10 +52,7 @@ import BuyerCatalog from '@/pages/buyer/Catalog';
 import ProfileSetupGate from '@/components/vimi/ProfileSetupGate';
 import { ThemeProvider } from '@/lib/ThemeContext';
 import AdminRoute from '@/components/AdminRoute';
-<<<<<<< HEAD
 import TelegramBots from '@/pages/TelegramBots';
-=======
->>>>>>> origin/main
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
@@ -113,10 +110,7 @@ const AuthenticatedApp = () => {
             <Route path="/locations" element={<Locations />} />
             <Route path="/profile" element={<BuyerProfile />} />
             <Route path="/profile/edit" element={<ProfileEdit />} />
-<<<<<<< HEAD
             <Route path="/profile/telegram" element={<TelegramBots />} />
-=======
->>>>>>> origin/main
             <Route path="/seller" element={<SellerHome />} />
             <Route path="/seller/businesses/new" element={<BusinessCreate />} />
             <Route path="/seller/businesses/:id" element={<BusinessProfile />} />
@@ -130,10 +124,7 @@ const AuthenticatedApp = () => {
             <Route path="/seller/products/:id" element={<ProductDetailSeller />} />
             <Route path="/seller/products/:id/edit" element={<ProductEdit />} />
             <Route path="/seller/profile" element={<SellerProfile />} />
-<<<<<<< HEAD
             <Route path="/seller/profile/telegram" element={<TelegramBots />} />
-=======
->>>>>>> origin/main
             <Route path="/seller/statistics" element={<SellerStatistics />} />
             <Route path="/seller/orders" element={<SellerOrders />} />
             <Route path="/seller/orders/:id" element={<SellerOrderDetail />} />

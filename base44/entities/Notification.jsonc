@@ -1,0 +1,84 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Recipient user id"
+    },
+    "title": {
+      "type": "string"
+    },
+    "body": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "description": "Notification category: order_buyer (buyer-facing order event), order_seller (seller-facing order event), order (legacy), system"
+    },
+    "related_id": {
+      "type": "string",
+      "description": "Optional related entity id (e.g. order id)"
+    },
+    "event_key": {
+      "type": "string",
+      "description": "Stable idempotency key per (recipient, event). When present, notify() skips creating a duplicate for the same user_id + event_key."
+    },
+    "read": {
+      "type": "boolean",
+      "default": false
+    },
+    "read_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the notification was marked read; null when unread"
+    }
+  },
+  "required": [
+    "user_id",
+    "title"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

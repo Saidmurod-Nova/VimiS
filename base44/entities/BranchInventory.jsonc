@@ -1,0 +1,66 @@
+{
+  "name": "BranchInventory",
+  "type": "object",
+  "properties": {
+    "branch_id": {
+      "type": "string"
+    },
+    "product_id": {
+      "type": "string"
+    },
+    "business_id": {
+      "type": "string",
+      "description": "Denormalized business for scoped filtering"
+    },
+    "owner_id": {
+      "type": "string",
+      "description": "Business owner user id (anchors RLS read)"
+    },
+    "stock": {
+      "type": "integer",
+      "default": 0
+    },
+    "price_override": {
+      "type": "number",
+      "description": "Optional branch-specific price in UZS; null = use product price"
+    },
+    "is_available": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "branch_id",
+    "product_id",
+    "owner_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.owner_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Business this product belongs to"
+    },
+    "category_id": {
+      "type": "string",
+      "description": "Optional ProductCategory id"
+    },
+    "category_name": {
+      "type": "string",
+      "description": "Denormalized category name for display"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "price": {
+      "type": "number",
+      "description": "Business-level default price in UZS (integer so'm)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "business_id",
+    "name",
+    "price"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.is_active": true
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

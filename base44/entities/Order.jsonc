@@ -1,0 +1,132 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "order_number": {
+      "type": "string",
+      "description": "Human-readable unique order number, e.g. VIM-20261002-A3F9K2"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Buyer user id"
+    },
+    "business_id": {
+      "type": "string"
+    },
+    "branch_id": {
+      "type": "string"
+    },
+    "business_name": {
+      "type": "string",
+      "description": "Snapshot of business name at order time"
+    },
+    "branch_name": {
+      "type": "string",
+      "description": "Snapshot of branch name at order time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "preparing",
+        "completed",
+        "cancelled"
+      ],
+      "default": "pending"
+    },
+    "delivery_address": {
+      "type": "string",
+      "description": "Snapshot of delivery address text at order time"
+    },
+    "delivery_latitude": {
+      "type": "number"
+    },
+    "delivery_longitude": {
+      "type": "number"
+    },
+    "buyer_name_snapshot": {
+      "type": "string",
+      "description": "Snapshot of buyer full name at order time"
+    },
+    "buyer_phone_snapshot": {
+      "type": "string",
+      "description": "Snapshot of buyer phone at order time"
+    },
+    "payment_method": {
+      "type": "string"
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "delivery_fee": {
+      "type": "number",
+      "default": 0
+    },
+    "total": {
+      "type": "number"
+    },
+    "item_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "notes": {
+      "type": "string"
+    },
+    "cancellation_reason": {
+      "type": "string"
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "preparing_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "cancelled_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "business_id",
+    "branch_id",
+    "order_number",
+    "total"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

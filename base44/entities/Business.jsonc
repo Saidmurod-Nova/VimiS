@@ -1,0 +1,80 @@
+{
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "category_id": {
+      "type": "string"
+    },
+    "category_name": {
+      "type": "string",
+      "description": "Denormalized category name for display"
+    },
+    "store_id": {
+      "type": "string",
+      "description": "Globally unique public Store ID, e.g. ARTEL-1234"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "low_stock_threshold": {
+      "type": "integer",
+      "default": 5,
+      "description": "Per-business low-stock warning threshold in units; used by dashboard alerts"
+    }
+  },
+  "required": [
+    "name",
+    "category_id",
+    "store_id"
+  ],
+  "name": "Business",
+  "type": "object",
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.is_active": true
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+<<<<<<< HEAD
 import { MapPin, Pencil, MapPinned, Briefcase, RefreshCw, LogOut, Loader2, MonitorSmartphone, QrCode, ShieldCheck, X, MessageCircle } from "lucide-react";
+=======
+import { MapPin, Pencil, MapPinned, Briefcase, RefreshCw, LogOut, Loader2, MonitorSmartphone, QrCode, ShieldCheck, X } from "lucide-react";
+>>>>>>> origin/main
 import { QRCodeSVG } from "qrcode.react";
 import Avatar from "@/components/vimi/Avatar";
 import { SettingsList, SettingsRow } from "@/components/vimi/SettingsList";
@@ -110,7 +114,10 @@ export default function Profile() {
         <SettingsRow icon={Pencil} label="Profilni tahrirlash" onClick={() => navigate("/profile/edit")} />
         <SettingsRow icon={MapPinned} label="Joylashuvlar" onClick={() => navigate("/locations", { state: { from: "/profile" } })} />
         <SettingsRow icon={Briefcase} label="Mening bizneslarim" onClick={() => {}} />
+<<<<<<< HEAD
         <SettingsRow icon={MessageCircle} label="Telegram botlari" onClick={() => navigate("/profile/telegram")} />
+=======
+>>>>>>> origin/main
       </SettingsList>
 
       {isSupabaseMode && (

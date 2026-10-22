@@ -1,6 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+<<<<<<< HEAD
 import { Store, RefreshCw, LogOut, Briefcase, Bell, MapPinned, Settings, MessageCircle } from "lucide-react";
+=======
+import { Store, RefreshCw, LogOut, Briefcase, Bell, MapPinned, Settings } from "lucide-react";
+>>>>>>> origin/main
 import Avatar from "@/components/vimi/Avatar";
 import { SettingsList, SettingsRow } from "@/components/vimi/SettingsList";
 import { useAuth } from "@/lib/AuthContext";
@@ -32,7 +36,10 @@ export default function Profile() {
         <SettingsRow icon={Briefcase} label="Filiallar" onClick={() => openBusiness()} />
         <SettingsRow icon={MapPinned} label="Joylashuvlar" onClick={() => navigate("/locations", { state: { from: "/seller/profile" } })} />
         <SettingsRow icon={Settings} label="Biznes sozlamalari" onClick={() => openBusiness("settings")} />
+<<<<<<< HEAD
         <SettingsRow icon={MessageCircle} label="Telegram botlari" onClick={() => navigate("/seller/profile/telegram")} />
+=======
+>>>>>>> origin/main
         <SettingsRow icon={Bell} label="Bildirishnomalar" onClick={() => {}} />
       </SettingsList>
 

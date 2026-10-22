@@ -55,8 +55,11 @@ This repo syncs to Base44 through git, so publish from the dashboard rather than
 
 ## Docs & Support
 
+<<<<<<< HEAD
 Telegram bot source, setup, deployment, and integration test guidance: [Telegram Bots](../telegram-bots/README.md).
 
+=======
+>>>>>>> origin/main
 GitHub integration: [https://docs.base44.com/developers/app-code/local-development/github](https://docs.base44.com/developers/app-code/local-development/github)
 
 Local development: [https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview](https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview)

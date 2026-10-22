@@ -10,6 +10,7 @@ import { base44 } from "@/api/base44Client";
 import { isSupabaseMode, supabase } from "@/lib/supabase";
 import Avatar from "./Avatar";
 import VimiLogo from "./VimiLogo";
+import NotificationBell from "./NotificationBell";
 import BusinessSelectorSheet from "./seller/BusinessSelectorSheet";
 import BranchSelectorSheet from "./seller/BranchSelectorSheet";
 import {
@@ -215,6 +216,8 @@ export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar }) 
         )}
 
         <div className={`ml-auto flex shrink-0 items-center gap-2 ${!isSeller ? "sm:ml-0" : "order-1 sm:order-none"}`}>
+          {isSupabaseMode && <NotificationBell key={user?.id || "anonymous"} />}
+
           {!isSeller && (
             <Link
               to="/cart"

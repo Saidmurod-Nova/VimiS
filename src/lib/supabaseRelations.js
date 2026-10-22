@@ -122,7 +122,7 @@ export async function listUnreadNotifications() {
   const client = requireSupabase();
   const userId = await currentUserId(client);
   const { data, error } = await client.from('notifications').select('id')
-    .eq('user_id', userId).eq('read', false);
+    .eq('recipient_id', userId).eq('is_read', false);
   fail(error, 'Bildirishnomalarni yuklab bo‘lmadi.');
   return data || [];
 }
@@ -130,7 +130,7 @@ export async function listUnreadNotifications() {
 export async function markNotificationRead(notificationId) {
   const client = requireSupabase();
   const userId = await currentUserId(client);
-  const { error } = await client.from('notifications').update({ read: true, read_at: new Date().toISOString() })
-    .eq('id', String(notificationId)).eq('user_id', userId);
+  const { error } = await client.from('notifications').update({ is_read: true })
+    .eq('id', String(notificationId)).eq('recipient_id', userId);
   fail(error, 'Bildirishnomani yangilab bo‘lmadi.');
 }

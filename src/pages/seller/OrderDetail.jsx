@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { MapPin, Phone, Package, Check, X, Clock, ChefHat, CheckCircle2, AlertCircle } from "lucide-react";
+import { MapPin, Navigation2, Phone, Package, Check, X, Clock, ChefHat, CheckCircle2, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseMode } from "@/lib/supabase";
 import { getSellerOrder } from "@/lib/supabaseRelations";
 import { updateOrderStatusSupabase } from "@/lib/supabaseOrders";
+import { directionsUrl } from "@/lib/maps";
 import PageHeader from "@/components/vimi/PageHeader";
 import OrderStatusBadge from "@/components/vimi/OrderStatusBadge";
 import Price from "@/components/vimi/Price";
@@ -34,7 +35,12 @@ export default function OrderDetail() {
       const result = isSupabaseMode
         ? await getSellerOrder(id)
         : (await base44.functions.invoke("getSellerOrder", { order_id: id })).data;
-      setData(result);
+      let branch = result?.branch || null;
+      if (!isSupabaseMode && !branch && result?.order?.branch_id) {
+        branch = await base44.entities.Branch.get(result.order.branch_id);
+      }
+      if (branch && branch.business_id !== result?.order?.business_id) branch = null;
+      setData(result ? { ...result, branch } : null);
     } catch (e) { setError(e); setData(null); }
     finally { setLoading(false); }
   }, [id]);
@@ -60,8 +66,16 @@ export default function OrderDetail() {
   if (loading && !data) return <div className="space-y-4"><PageHeader title="Buyurtma" backTo="/seller/orders" /><LoadingState /></div>;
   if (!data?.order) return <div className="space-y-4"><PageHeader title="Buyurtma" backTo="/seller/orders" /><EmptyState title="Buyurtma topilmadi" /></div>;
 
-  const { order, items } = data;
+  const { order, items, branch } = data;
   const status = order.status;
+  const deliveryDirectionsUrl = directionsUrl(
+    branch || {},
+    {
+      latitude: order.delivery_latitude,
+      longitude: order.delivery_longitude,
+      address: order.delivery_address,
+    },
+  );
 
   const steps = [
     { key: "pending", label: "Yaratildi", icon: Clock, at: order.created_date },
@@ -111,6 +125,17 @@ export default function OrderDetail() {
         <div className="flex items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-secondary"><Package className="h-3.5 w-3.5" /></span><span className="font-medium">{order.buyer_name_snapshot || "Xaridor"}</span></div>
         {order.buyer_phone_snapshot && <div className="flex items-center gap-2 text-muted-foreground"><Phone className="h-3.5 w-3.5" />{order.buyer_phone_snapshot}</div>}
         {order.delivery_address && <div className="flex items-start gap-2 text-muted-foreground"><MapPin className="mt-0.5 h-3.5 w-3.5" />{order.delivery_address}</div>}
+        {deliveryDirectionsUrl && (
+          <a
+            href={deliveryDirectionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-secondary px-4 text-sm font-medium text-secondary-foreground transition hover:bg-secondary/80"
+          >
+            <Navigation2 className="mr-1.5 h-4 w-4" />
+            Google Xaritalarda yo'nalish olish
+          </a>
+        )}
         {order.notes && <div className="rounded-xl bg-secondary p-2 text-xs text-muted-foreground">Izoh: {order.notes}</div>}
       </div>
 

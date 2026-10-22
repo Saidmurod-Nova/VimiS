@@ -8,3 +8,34 @@ export function openInMaps(lat, lng, label) {
 export function mapsUrl(lat, lng) {
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 }
+
+function locationQuery(location) {
+  if (
+    location.latitude !== null &&
+    location.latitude !== undefined &&
+    location.longitude !== null &&
+    location.longitude !== undefined &&
+    Number.isFinite(Number(location.latitude)) &&
+    Number.isFinite(Number(location.longitude))
+  ) {
+    return `${Number(location.latitude)},${Number(location.longitude)}`;
+  }
+
+  return [location.address, location.city, location.district, location.region, location.country, location.name]
+    .filter((part) => typeof part === "string" && part.trim())
+    .join(", ");
+}
+
+export function directionsUrl(origin, destination) {
+  const originQuery = locationQuery(origin);
+  const destinationQuery = locationQuery(destination);
+  if (!originQuery || !destinationQuery) return null;
+
+  const params = new URLSearchParams({
+    api: "1",
+    origin: originQuery,
+    destination: destinationQuery,
+    travelmode: "driving",
+  });
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}

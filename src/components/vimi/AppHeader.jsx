@@ -22,29 +22,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
-  const Icon = theme === "dark" ? Sun : Moon;
-  const label = theme === "dark" ? "Yorug‘ mavzuga o‘tish" : "Qorong‘i mavzuga o‘tish";
-
-  return (
-    <button
-      type="button"
-      onClick={toggleTheme}
-      aria-label={label}
-      title={label}
-      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-foreground transition hover:bg-secondary"
-    >
-      <Icon className="h-4 w-4" aria-hidden="true" />
-    </button>
-  );
-}
-
 export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
   const { totalItems } = useCart();
+  const { theme, toggleTheme } = useTheme();
   const {
     businesses,
     selectedBusiness,
@@ -233,8 +216,6 @@ export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar }) 
             </Link>
           )}
 
-          <ThemeToggle />
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -268,6 +249,12 @@ export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar }) 
                 {isSeller ? "Xaridorga o‘tish" : "Sotuvchiga o‘tish"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={toggleTheme}>
+                {theme === "dark"
+                  ? <Sun aria-hidden="true" />
+                  : <Moon aria-hidden="true" />}
+                {theme === "dark" ? "Yorug‘ mavzuga o‘tish" : "Qorong‘i mavzuga o‘tish"}
+              </DropdownMenuItem>
               <DropdownMenuItem onSelect={handleLogout}>
                 <LogOut aria-hidden="true" />
                 Hisobdan chiqish

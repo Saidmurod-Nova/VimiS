@@ -7,7 +7,6 @@ export function openInMaps(lat, lng, label) {
 
 export function mapsUrl(lat, lng) {
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-<<<<<<< HEAD
 }
 
 function locationQuery(location) {
@@ -39,6 +38,4 @@ export function directionsUrl(origin, destination) {
     travelmode: "driving",
   });
   return `https://www.google.com/maps/dir/?${params.toString()}`;
-=======
->>>>>>> origin/main
 }

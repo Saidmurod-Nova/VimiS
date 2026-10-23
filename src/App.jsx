@@ -53,6 +53,7 @@ import ProfileSetupGate from '@/components/vimi/ProfileSetupGate';
 import { ThemeProvider } from '@/lib/ThemeContext';
 import AdminRoute from '@/components/AdminRoute';
 import TelegramBots from '@/pages/TelegramBots';
+import TelegramMiniApp from '@/pages/TelegramMiniApp';
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
@@ -139,20 +140,27 @@ const AuthenticatedApp = () => {
   );
 };
 
+function AuthenticatedRoot() {
+  return (
+    <AuthProvider>
+      <ScrollToTop />
+      <AuthenticatedApp />
+    </AuthProvider>
+  );
+}
 
 function App() {
-
   return (
     <ThemeProvider>
-    <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <ScrollToTop />
-          <AuthenticatedApp />
+          <Routes>
+            <Route path="/telegram-miniapp" element={<TelegramMiniApp />} />
+            <Route path="*" element={<AuthenticatedRoot />} />
+          </Routes>
+          <Toaster />
         </Router>
-        <Toaster />
       </QueryClientProvider>
-    </AuthProvider>
     </ThemeProvider>
   )
 }

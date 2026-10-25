@@ -78,6 +78,7 @@ export default function Home() {
 
   return (
     <div className="animate-fade-in space-y-6">
+      <h1>VimiS — Do‘konlar va mahsulotlarni bir joyda toping</h1>
       <header className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => setLocOpen(true)} className="inline-flex max-w-[40vw] items-center gap-1.5 rounded-full bg-secondary px-3 py-2 text-sm font-medium text-foreground">

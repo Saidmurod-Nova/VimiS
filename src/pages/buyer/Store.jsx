@@ -11,12 +11,11 @@ import FavoriteButton from "@/components/vimi/FavoriteButton";
 import CartButton from "@/components/vimi/CartButton";
 import ProductCard from "@/components/vimi/ProductCard";
 import AvailabilityBadge from "@/components/vimi/AvailabilityBadge";
-import StatusBadge from "@/components/vimi/StatusBadge";
 import { Image } from "@/components/ui/image";
 import { LoadingState, EmptyState, ErrorState } from "@/components/vimi/States";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useBuyer } from "@/lib/BuyerContext";
-import { openInMaps, mapsUrl } from "@/lib/maps";
+import { openInMaps } from "@/lib/maps";
 
 export default function Store() {
   const { storeId } = useParams();
@@ -37,6 +36,7 @@ export default function Store() {
 
   // Load business + active branches.
   useEffect(() => {
+    let isCurrent = true;
     (async () => {
       setLoading(true); setNotFound(false); setInactive(false); setBusiness(null); setBranches([]); setSelectedBranchId(null);
       try {
@@ -47,27 +47,28 @@ export default function Store() {
           const list = await base44.entities.Business.filter({ store_id: storeId });
           b = list && list[0];
         }
-        if (!b) { setNotFound(true); return; }
-        setBusiness(b);
-        if (!b.is_active) { setInactive(true); return; }
+        if (!b) { if (isCurrent) setNotFound(true); return; }
+        if (isCurrent) setBusiness(b);
+        if (!b.is_active) { if (isCurrent) setInactive(true); return; }
         const br = isSupabaseMode ? await listBranches(b.id) : await base44.entities.Branch.filter({ business_id: b.id });
         const active = (br || []).filter((x) => x.is_active);
+        if (!isCurrent) return;
         setBranches(active);
         let initial = null;
         if (active.length === 1) initial = active[0];
         else if (active.length > 1) {
           initial = (selectedLocation?.city ? active.find((x) => x.city === selectedLocation.city) : null) || active[0];
         }
-        setSelectedBranchId(initial ? initial.id : null);
-        markVisited(b.id);
+        if (isCurrent) setSelectedBranchId(initial ? initial.id : null);
+        if (isCurrent) await markVisited(b.id);
       } catch {
-        setNotFound(true);
+        if (isCurrent) setNotFound(true);
       } finally {
-        setLoading(false);
+        if (isCurrent) setLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId]);
+    return () => { isCurrent = false; };
+  }, [storeId, selectedLocation?.city, markVisited]);
 
   // Load branch catalog when a branch is selected.
   useEffect(() => {
@@ -100,24 +101,40 @@ export default function Store() {
   const selectedBranch = branches.find((b) => b.id === selectedBranchId);
 
   return (
-    <div className="animate-fade-in space-y-5">
-      <PageHeader title={business.name} backTo="/" />
+    <div className="-mx-4 -mt-6 relative isolate min-h-[calc(100vh-4rem)] bg-[#f3f6f3] px-4 pb-10 pt-6 dark:bg-background sm:-mx-6 sm:-mt-6 sm:px-6 lg:-mx-8 lg:-mt-8 lg:px-8">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-[#dcece4] dark:bg-emerald-950/30 sm:h-64 lg:h-72" aria-hidden="true" />
+      <div className="workspace-page animate-fade-in relative mx-auto max-w-[1440px]">
+        <PageHeader title="Do‘kon" backTo="/" />
 
-      <div className="flex items-start gap-4 rounded-2xl border border-border bg-card p-4">
-        <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-secondary">
-          {business.logo_url ? <Image src={business.logo_url} alt={business.name} fittingType="fill" className="h-full w-full" /> : <StoreIcon className="h-7 w-7 text-muted-foreground" />}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <h2 className="truncate text-lg font-semibold">{business.name}</h2>
-            <FavoriteButton business={business} size="sm" />
+        <section className="mt-20 flex min-w-0 items-start gap-3 rounded-2xl border border-emerald-900/10 bg-card p-4 shadow-xl shadow-emerald-950/10 sm:mt-24 sm:items-center sm:gap-5 sm:rounded-3xl sm:p-6 lg:mt-28 dark:border-emerald-100/10">
+          <span className="inline-flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-emerald-50 ring-1 ring-emerald-900/10 sm:h-24 sm:w-24 dark:bg-emerald-950/40 dark:ring-emerald-100/10">
+            {business.logo_url ? <Image src={business.logo_url} alt={business.name} fittingType="fill" className="h-full w-full" /> : <StoreIcon className="h-8 w-8 text-primary" />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Do‘kon</p>
+                <h2 className="truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">{business.name}</h2>
+              </div>
+              <FavoriteButton business={business} size="sm" />
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-semibold tracking-wide text-primary">
+                {business.store_id}
+              </span>
+              {business.category_name && (
+                <span className="inline-flex items-center rounded-full border border-border bg-background/70 px-3 py-1 text-xs font-medium text-foreground">
+                  {business.category_name}
+                </span>
+              )}
+            </div>
+            {business.description && (
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{business.description}</p>
+            )}
           </div>
-          <p className="font-mono text-sm text-primary">{business.store_id}</p>
-          {business.category_name && <p className="text-xs text-muted-foreground">{business.category_name}</p>}
-          {business.description && <p className="mt-1 text-xs text-muted-foreground">{business.description}</p>}
-        </div>
-      </div>
+        </section>
 
+      <div className="mt-5 space-y-5">
       {inactive ? (
         <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm text-foreground">Bu do'kon hozirda mavjud emas.</div>
       ) : branches.length === 0 ? (
@@ -182,7 +199,7 @@ export default function Store() {
               {items.length === 0 ? (
                 <EmptyState icon={Package} title="Bu filialda mahsulot yo'q" description="Boshqa filialni tanlab ko'ring." />
               ) : (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {items.map((item) => (
                     <ProductCard
                       key={item.product_id}
@@ -203,7 +220,9 @@ export default function Store() {
           </BottomSheet>
         </>
       )}
-      <CartButton />
+        <CartButton />
+      </div>
+      </div>
     </div>
   );
 }

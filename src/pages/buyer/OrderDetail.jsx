@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { AlertCircle, CheckCircle2, Clock, Package, ShoppingBag, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, ExternalLink, MapPin, Package, ShoppingBag, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseMode } from "@/lib/supabase";
 import { getBuyerOrder } from "@/lib/supabaseRelations";
@@ -13,6 +13,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/vimi/States";
 import { PrimaryButton, SecondaryButton } from "@/components/vimi/VimiButton";
 import { useToast } from "@/components/ui/use-toast";
 import { formatSoM } from "@/lib/inventory";
+import { locationUrl } from "@/lib/maps";
 
 const STEPS = [
   { key: "pending", label: "Buyurtma yaratildi", icon: Clock },
@@ -80,9 +81,14 @@ export default function BuyerOrderDetail() {
   const statusIndex = STEPS.findIndex((step) => step.key === order.status);
   const cancelled = order.status === "cancelled";
   const canCancel = order.status === "pending" || order.status === "accepted";
+  const deliveryMapUrl = locationUrl({
+    latitude: order.delivery_latitude,
+    longitude: order.delivery_longitude,
+    address: order.delivery_address,
+  });
 
   return (
-    <div className="animate-fade-in space-y-5">
+    <div className="workspace-page animate-fade-in space-y-5">
       <PageHeader title={`#${order.order_number || "Buyurtma"}`} subtitle={order.business_name || "Vimi"} backTo="/orders" />
 
       <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
@@ -127,7 +133,20 @@ export default function BuyerOrderDetail() {
         <div className="flex justify-between text-muted-foreground"><span>Mahsulotlar</span><span>{formatSoM(order.subtotal)} so'm</span></div>
         <div className="flex justify-between text-muted-foreground"><span>Yetkazib berish</span><span>{formatSoM(order.delivery_fee || 0)} so'm</span></div>
         <div className="flex justify-between border-t border-border pt-3 text-base font-semibold"><span>Jami</span><Price value={order.total} /></div>
-        {order.delivery_address && <div className="border-t border-border pt-3"><p className="text-xs text-muted-foreground">Yetkazib berish manzili</p><p className="mt-1">{order.delivery_address}</p></div>}
+        {order.delivery_address && <div className="border-t border-border pt-3">
+          <p className="text-xs text-muted-foreground">Yetkazib berish manzili</p>
+          <p className="mt-1">{order.delivery_address}</p>
+          {deliveryMapUrl && <a
+            href={deliveryMapUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 text-sm font-medium text-secondary-foreground transition hover:bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            <MapPin className="h-4 w-4" aria-hidden="true" />
+            Xaritada ochish
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>}
+        </div>}
         {order.notes && <div><p className="text-xs text-muted-foreground">Izoh</p><p className="mt-1">{order.notes}</p></div>}
       </section>
 

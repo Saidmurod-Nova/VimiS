@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, Check, LoaderCircle } from "lucide-react";
+import { ArrowUpRight, Bell, Check, LoaderCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { isSupabaseMode, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
@@ -225,7 +225,7 @@ export default function NotificationBell() {
           type="button"
           aria-label={`Bildirishnomalar${unreadCount > 0 ? `, ${unreadCount} ta o‘qilmagan` : ""}`}
           aria-expanded={open}
-          className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-foreground transition hover:bg-secondary"
+          className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/[0.07] text-white/90 transition hover:bg-white/10"
         >
           <Bell className="h-4 w-4" aria-hidden="true" />
           {unreadCount > 0 && (
@@ -238,7 +238,7 @@ export default function NotificationBell() {
       <PopoverContent
         align="end"
         sideOffset={8}
-        className="w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl p-0 shadow-xl"
+        className="liquid-surface w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl p-0"
       >
         <div className="flex flex-col items-start justify-between gap-2 border-b border-border px-4 py-3 sm:flex-row sm:items-center">
           <div>
@@ -314,6 +314,17 @@ export default function NotificationBell() {
             </ul>
           )}
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            navigate("/notifications");
+          }}
+          className="flex min-h-11 w-full items-center justify-center gap-2 border-t border-border/70 px-4 text-sm font-semibold text-primary transition hover:bg-primary/5"
+        >
+          Barcha bildirishnomalar
+          <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+        </button>
       </PopoverContent>
     </Popover>
   );

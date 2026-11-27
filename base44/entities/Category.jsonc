@@ -6,6 +6,14 @@
     "icon": {
       "type": "string",
       "description": "Optional emoji or lucide icon name"
+    },
+    "parent_id": {
+      "type": "string",
+      "description": "Parent category ID for nested categories"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Display order among sibling categories"
     }
   },
   "required": [

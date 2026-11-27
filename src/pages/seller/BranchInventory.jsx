@@ -2,16 +2,15 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getBranch as getBranchSupabase, listProducts as listProductsSupabase, listBranchInventory as listBranchInventorySupabase } from "@/lib/supabaseCatalog";
-import { Search, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import { SearchBar } from "@/components/vimi/VimiInput";
 import StockBadge from "@/components/vimi/StockBadge";
 import AvailabilityBadge from "@/components/vimi/AvailabilityBadge";
-import { LoadingState, EmptyState } from "@/components/vimi/States";
+import { LoadingState, EmptyState, ErrorState } from "@/components/vimi/States";
 import InventoryEditSheet from "@/components/vimi/InventoryEditSheet";
 import { Image } from "@/components/ui/image";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { formatSoM, effectivePrice } from "@/lib/inventory";
 
 const FILTERS = [
   { value: "all", label: "Barchasi" },
@@ -22,18 +21,21 @@ const FILTERS = [
 ];
 
 export default function BranchInventory() {
-  const { id: businessId, branchId } = useParams();
+  const { id, businessId: routeBusinessId, branchId } = useParams();
+  const businessId = routeBusinessId || id;
   const navigate = useNavigate();
   const [branch, setBranch] = useState(null);
   const [products, setProducts] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [editProduct, setEditProduct] = useState(null);
 
   useEffect(() => {
     setLoading(true);
+    setError("");
     const useSupabase = import.meta.env.VITE_AUTH_PROVIDER === "supabase";
     Promise.all(useSupabase ? [
       getBranchSupabase(branchId),
@@ -43,8 +45,14 @@ export default function BranchInventory() {
       base44.entities.Branch.get(branchId),
       base44.entities.Product.filter({ business_id: businessId }, "name"),
       base44.entities.BranchInventory.filter({ branch_id: branchId })
-    ]).then(([b, p, inv]) => { setBranch(b); setProducts(p || []); setInventory(inv || []); })
-      .catch(() => { setBranch(null); setProducts([]); setInventory([]); })
+    ]).then(([b, p, inv]) => { setBranch(b?.business_id === businessId ? b : null); setProducts(p || []); setInventory(inv || []); })
+      .catch((loadError) => {
+        console.error("Filial inventarini yuklab bo‘lmadi.", loadError);
+        setError(loadError?.message || "Filial inventarini yuklab bo‘lmadi.");
+        setBranch(null);
+        setProducts([]);
+        setInventory([]);
+      })
       .finally(() => setLoading(false));
   }, [branchId, businessId]);
 
@@ -73,12 +81,13 @@ export default function BranchInventory() {
     return list;
   }, [products, invByProduct, search, filter]);
 
-  if (loading) return <div className="space-y-4"><PageHeader title="Inventar" backTo={`/seller/businesses/${businessId}/branches/${branchId}`} /><LoadingState /></div>;
-  if (!branch) return <div className="space-y-4"><PageHeader title="Inventar" backTo="/seller" /><EmptyState title="Filial topilmadi" /></div>;
+  if (loading) return <div className="space-y-4"><PageHeader title="Inventar" backTo={`/business/${businessId}/branches/${branchId}`} /><LoadingState /></div>;
+  if (error) return <div className="space-y-4"><PageHeader title="Inventar" backTo={`/business/${businessId}/branches/${branchId}`} /><ErrorState title={error} /></div>;
+  if (!branch) return <div className="space-y-4"><PageHeader title="Inventar" backTo={`/business/${businessId}`} /><EmptyState title="Filial topilmadi" /></div>;
 
   return (
     <div className="animate-fade-in space-y-5">
-      <PageHeader title="Inventar" subtitle={branch.name} backTo={`/seller/businesses/${businessId}/branches/${branchId}`} />
+      <PageHeader title="Inventar" subtitle={branch.name} backTo={`/business/${businessId}/branches/${branchId}`} />
       <SearchBar value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Mahsulot nomi" />
       <Select value={filter} onValueChange={setFilter}>
         <SelectTrigger className="h-10 rounded-xl bg-secondary/70"><SelectValue /></SelectTrigger>

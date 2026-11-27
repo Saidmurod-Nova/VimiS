@@ -1,43 +1,52 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { listMyBusinesses } from "@/lib/supabaseCatalog";
 
 const BusinessContext = createContext(null);
-const STORAGE_KEY = "vimi:selectedBusiness";
 
 export function BusinessProvider({ children }) {
   const { user, isAuthenticated } = useAuth();
+  const { pathname } = useLocation();
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState(() => localStorage.getItem(STORAGE_KEY) || null);
+  const [error, setError] = useState("");
   const [selectedBranchId, setSelectedBranchId] = useState("all");
+  const requestId = useRef(0);
+
+  const workspaceId = pathname.match(/^\/business\/([^/]+)/)?.[1];
+  const activeBusinessId = workspaceId && workspaceId !== "new" ? workspaceId : null;
 
   useEffect(() => {
     setSelectedBranchId("all");
-  }, [selectedId]);
+  }, [activeBusinessId, user?.id]);
 
   const refresh = useCallback(async () => {
+    const currentRequest = ++requestId.current;
     if (!isAuthenticated || !user) {
       setBusinesses([]);
+      setError("");
       setLoading(false);
       return;
     }
     setLoading(true);
+    setError("");
     try {
       const useSupabase = import.meta.env.VITE_AUTH_PROVIDER === "supabase";
       const list = useSupabase
         ? await listMyBusinesses()
         : await base44.entities.Business.filter({ created_by_id: user.id }, "-created_date", 100);
+      if (currentRequest !== requestId.current) return [];
       setBusinesses(list || []);
-      setSelectedId((prev) => {
-        if (prev && (list || []).some((b) => b.id === prev)) return prev;
-        return list && list[0] ? list[0].id : null;
-      });
-    } catch {
+      return list || [];
+    } catch (loadError) {
+      if (currentRequest !== requestId.current) return [];
       setBusinesses([]);
+      setError(loadError?.message || "Bizneslar ro‘yxatini yuklab bo‘lmadi.");
+      return [];
     } finally {
-      setLoading(false);
+      if (currentRequest === requestId.current) setLoading(false);
     }
   }, [isAuthenticated, user]);
 
@@ -45,22 +54,26 @@ export function BusinessProvider({ children }) {
     refresh();
   }, [refresh]);
 
-  const selectBusiness = (id) => {
-    setSelectedId(id);
-    if (id) localStorage.setItem(STORAGE_KEY, id);
-    else localStorage.removeItem(STORAGE_KEY);
-  };
+  const rememberBusiness = useCallback((business) => {
+    if (!business?.id) return;
+    setBusinesses((current) => [
+      business,
+      ...current.filter((item) => item.id !== business.id),
+    ]);
+    setError("");
+  }, []);
 
-  const selectedBusiness = businesses.find((b) => b.id === selectedId) || null;
+  const selectedBusiness = businesses.find((b) => b.id === activeBusinessId) || null;
 
   return (
     <BusinessContext.Provider
       value={{
         businesses,
         loading,
+        error,
         selectedBusiness,
-        selectedId,
-        selectBusiness,
+        workspaceId: workspaceId === "new" ? null : workspaceId,
+        rememberBusiness,
         selectedBranchId,
         selectBranch: setSelectedBranchId,
         refresh,

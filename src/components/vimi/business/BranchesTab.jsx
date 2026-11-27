@@ -10,8 +10,8 @@ import { EmptyState } from "../States";
 export default function BranchesTab({ businessId, branches }) {
   const navigate = useNavigate();
   const [view, setView] = useState("list");
-  const newTo = `/seller/businesses/${businessId}/branches/new`;
-  const detail = (bid) => `/seller/businesses/${businessId}/branches/${bid}`;
+  const newTo = `/business/${businessId}/branches/new`;
+  const detail = (bid) => `/business/${businessId}/branches/${bid}`;
 
   const toggle = (v) => (
     <button type="button" onClick={() => setView(v)} className={cn(view === v ? "rounded-full bg-background px-3 py-1 text-xs font-medium" : "px-3 py-1 text-xs text-muted-foreground")}>

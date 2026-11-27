@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export default function Price({ value, currency = "so'm", size = "md", className }) {
+export default function Price({ value, currency = "so'm", size = "md", className = "" }) {
   const formatted = new Intl.NumberFormat("en-US").format(Math.round(Number(value) || 0)).replace(/,/g, " ");
   const sizes = { sm: "text-base", md: "text-lg", lg: "text-2xl" };
   return (

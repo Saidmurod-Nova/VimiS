@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { MapPin, Navigation2, Phone, Package, Check, X, Clock, ChefHat, CheckCircle2, AlertCircle } from "lucide-react";
+import { BadgeCheck, MapPin, Navigation2, Phone, Package, Check, X, Clock, ChefHat, CheckCircle2, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseMode } from "@/lib/supabase";
 import { getSellerOrder } from "@/lib/supabaseRelations";
@@ -20,7 +20,7 @@ import { formatSoM } from "@/lib/inventory";
 // complete/cancel). Actions call updateOrderStatus (server-authorized) and
 // refresh the order. Cancelling offers an optional reason.
 export default function OrderDetail() {
-  const { id } = useParams();
+  const { id, businessId } = useParams();
   const { toast } = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -35,6 +35,9 @@ export default function OrderDetail() {
       const result = isSupabaseMode
         ? await getSellerOrder(id)
         : (await base44.functions.invoke("getSellerOrder", { order_id: id })).data;
+      if (result?.order?.business_id !== businessId) {
+        throw new Error("Buyurtma ushbu biznesga tegishli emas.");
+      }
       let branch = result?.branch || null;
       if (!isSupabaseMode && !branch && result?.order?.branch_id) {
         branch = await base44.entities.Branch.get(result.order.branch_id);
@@ -43,7 +46,7 @@ export default function OrderDetail() {
       setData(result ? { ...result, branch } : null);
     } catch (e) { setError(e); setData(null); }
     finally { setLoading(false); }
-  }, [id]);
+  }, [id, businessId]);
 
   useEffect(() => { fetchOrder(); }, [fetchOrder]);
 
@@ -62,11 +65,12 @@ export default function OrderDetail() {
     } finally { setActing(false); }
   };
 
-  if (error) return <div className="space-y-4"><PageHeader title="Buyurtma" backTo="/seller/orders" /><ErrorState onRetry={fetchOrder} /></div>;
-  if (loading && !data) return <div className="space-y-4"><PageHeader title="Buyurtma" backTo="/seller/orders" /><LoadingState /></div>;
-  if (!data?.order) return <div className="space-y-4"><PageHeader title="Buyurtma" backTo="/seller/orders" /><EmptyState title="Buyurtma topilmadi" /></div>;
+  const ordersPath = `/business/${businessId}/orders`;
+  if (error) return <div className="workspace-page space-y-4"><PageHeader title="Buyurtma" backTo={ordersPath} /><ErrorState onRetry={fetchOrder} /></div>;
+  if (loading && !data) return <div className="workspace-page space-y-4"><PageHeader title="Buyurtma" backTo={ordersPath} /><LoadingState /></div>;
+  if (!data?.order) return <div className="workspace-page space-y-4"><PageHeader title="Buyurtma" backTo={ordersPath} /><EmptyState title="Buyurtma topilmadi" /></div>;
 
-  const { order, items, branch } = data;
+  const { order, items, branch, courier } = data;
   const status = order.status;
   const deliveryDirectionsUrl = directionsUrl(
     branch || {},
@@ -87,8 +91,8 @@ export default function OrderDetail() {
   const cancelled = status === "cancelled";
 
   return (
-    <div className="animate-fade-in space-y-5">
-      <PageHeader title={`#${order.order_number}`} subtitle={order.branch_name} backTo="/seller/orders" />
+    <div className="workspace-page animate-fade-in space-y-5">
+      <PageHeader title={`Buyurtma #${order.order_number}`} subtitle={order.branch_name} backTo={ordersPath} />
 
       {/* Status + timeline */}
       <div className="rounded-2xl border border-border bg-card p-4">
@@ -138,6 +142,26 @@ export default function OrderDetail() {
         )}
         {order.notes && <div className="rounded-xl bg-secondary p-2 text-xs text-muted-foreground">Izoh: {order.notes}</div>}
       </div>
+
+      {courier && (
+        <section className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
+          <div className="flex items-center gap-2">
+            <BadgeCheck className="h-4 w-4 text-indigo-700 dark:text-indigo-300" aria-hidden="true" />
+            <h2 className="text-sm font-semibold">Biriktirilgan kuryer</h2>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-medium">{courier.name}</p>
+              <p className="mt-1 font-mono text-xs text-muted-foreground">Kuryer kodi: {courier.courier_code}</p>
+            </div>
+            {courier.phone && (
+              <a href={`tel:${courier.phone}`} className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-indigo-800 shadow-sm transition hover:bg-indigo-100 dark:bg-indigo-950 dark:text-indigo-200 dark:hover:bg-indigo-900">
+                <Phone className="h-4 w-4" aria-hidden="true" />{courier.phone}
+              </a>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Items */}
       <div className="space-y-2">

@@ -50,7 +50,7 @@ export default function ProfileEdit() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl animate-fade-in space-y-6">
+    <div className="workspace-page mx-auto w-full max-w-2xl animate-fade-in space-y-6">
       <PageHeader title="Profilni tahrirlash" subtitle="Ism va telefon raqamingizni yangilang." backTo="/profile" />
       <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-border bg-card p-4 sm:p-6">
         {error && (

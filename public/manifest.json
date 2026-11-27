@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Vimi — savdo va biznes platformasi",
-  "short_name": "Vimi",
-  "description": "Do‘konlarni kashf eting, buyurtma bering va biznesingizni boshqaring.",
+  "name": "VireonSpes — Marketplace va biznes platformasi",
+  "short_name": "VireonSpes",
+  "description": "Mahsulot va xizmatlarni kashf eting, biznesingizni yarating va boshqaring.",
   "lang": "uz-UZ",
   "start_url": "/",
   "scope": "/",

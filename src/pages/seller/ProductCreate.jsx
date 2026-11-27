@@ -11,11 +11,12 @@ import { EmptyState } from "@/components/vimi/States";
 export default function ProductCreate() {
   const navigate = useNavigate();
   const { selectedBusiness: biz } = useBusiness();
+  const productsPath = biz ? `/business/${biz.id}/products` : "/business";
   const { toast } = useToast();
 
   if (!biz) return (
     <div className="space-y-4">
-      <PageHeader title="Yangi mahsulot" backTo="/seller/products" />
+      <PageHeader title="Yangi mahsulot" backTo={productsPath} />
       <EmptyState title="Avval biznes tanlang" />
     </div>
   );
@@ -29,8 +30,8 @@ export default function ProductCreate() {
       product = res.data.product;
     }
     toast({ title: "Mahsulot yaratildi" });
-    navigate(`/seller/products/${product.id}`);
+    navigate(`${productsPath}/${product.id}`);
   };
 
-  return <ProductForm businessId={biz.id} onSubmit={submit} submitLabel="Mahsulot yaratish" backTo="/seller/products" />;
+  return <ProductForm businessId={biz.id} onSubmit={submit} submitLabel="Mahsulot yaratish" backTo={productsPath} />;
 }

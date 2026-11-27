@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const base = "rounded-xl font-medium transition-all duration-200 active:scale-[0.98]";
+const base = "rounded-lg font-medium transition-all duration-200 active:scale-[0.98]";
 
 export function PrimaryButton({ className, ...props }) {
   return <Button className={cn(base, className)} {...props} />;

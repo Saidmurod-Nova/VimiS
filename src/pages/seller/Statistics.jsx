@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { TrendingUp, ShoppingBag, CheckCircle2, XCircle, Package, Receipt } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseMode } from "@/lib/supabase";
@@ -27,17 +27,29 @@ export default function Statistics() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const requestId = useRef(0);
 
   const fetchStats = useCallback(async () => {
-    if (!businessId) return;
-    setLoading(true); setError(null);
+    const currentRequest = ++requestId.current;
+    if (!businessId) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true); setError(null); setData(null);
     try {
       const result = isSupabaseMode
         ? await getSellerStatistics({ businessId, branchId, range, from, to })
         : (await base44.functions.invoke("getSellerStatistics", { business_id: businessId, branch_id: branchId, range, from, to })).data;
-      setData(result);
-    } catch (e) { setError(e); setData(null); }
-    finally { setLoading(false); }
+      if (currentRequest === requestId.current) setData(result);
+    } catch (e) {
+      if (currentRequest === requestId.current) {
+        setError(e);
+        setData(null);
+      }
+    } finally {
+      if (currentRequest === requestId.current) setLoading(false);
+    }
   }, [businessId, branchId, range, from, to]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
@@ -45,7 +57,7 @@ export default function Statistics() {
   if (!businessId) {
     return (
       <div className="animate-fade-in space-y-4">
-        <PageHeader title="Statistika" backTo="/seller" />
+        <PageHeader title="Tahlillar" />
         <p className="text-sm text-muted-foreground">Avval biznes tanlang.</p>
       </div>
     );
@@ -56,8 +68,8 @@ export default function Statistics() {
   const showComparison = data?.branchComparison && data.branchComparison.length > 0;
 
   return (
-    <div className="animate-fade-in space-y-5">
-      <PageHeader title="Statistika" backTo="/seller" />
+    <div className="workspace-page animate-fade-in space-y-5">
+      <PageHeader title="Tahlillar" subtitle="Tanlangan biznesning real buyurtma va savdo ko‘rsatkichlari." />
 
       <div className="flex flex-wrap items-center gap-2">
         <DateRangeSelector range={range} from={from} to={to} onChange={onRangeChange} />
@@ -71,30 +83,30 @@ export default function Statistics() {
       ) : (
         <>
           {/* Core metrics */}
-          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
-            <StatCard label="Daromad" icon={TrendingUp} value={formatSoM(c.completedRevenue)} hint="so'm · yakunlangan" className="col-span-2 md:col-span-1" />
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 2xl:grid-cols-6">
+            <StatCard label="Daromad" icon={TrendingUp} value={formatSoM(c.completedRevenue)} hint="so‘m · yakunlangan" />
             <StatCard label="Buyurtmalar" icon={ShoppingBag} value={formatSoM(c.orderCount)} hint="davrda yaratilgan" />
             <StatCard label="Yakunlangan" icon={CheckCircle2} value={formatSoM(c.completedCount)} hint="davrda yakunlangan" />
             <StatCard label="Bekor" icon={XCircle} value={formatSoM(c.cancelledCount)} hint="davrda bekor qilingan" />
-            <StatCard label="O'rtacha chek" icon={Receipt} value={formatSoM(c.avgOrderValue)} hint="so'm · yakunlangan/dona" />
+            <StatCard label="O‘rtacha chek" icon={Receipt} value={formatSoM(c.avgOrderValue)} hint="so‘m · yakunlangan buyurtma" />
             <StatCard label="Sotilgan mahsulot" icon={Package} value={formatSoM(c.productsSold)} hint="dona · yakunlangan" />
           </div>
 
-          {/* Revenue trend */}
-          <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
-            <h2 className="font-display text-base font-semibold tracking-tight">Daromad dinamikasi</h2>
-            <RevenueChart data={data?.revenueTrend || []} />
-          </section>
+          <div className="grid gap-4 xl:grid-cols-2">
+            <section className="surface-card space-y-3 p-4">
+              <h2 className="font-display text-base font-semibold tracking-tight">Daromad dinamikasi</h2>
+              <RevenueChart data={data?.revenueTrend || []} />
+            </section>
 
-          {/* Order trend */}
-          <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
-            <h2 className="font-display text-base font-semibold tracking-tight">Buyurtmalar dinamikasi</h2>
-            <OrderTrendChart data={data?.orderTrend || []} />
-          </section>
+            <section className="surface-card space-y-3 p-4">
+              <h2 className="font-display text-base font-semibold tracking-tight">Buyurtmalar dinamikasi</h2>
+              <OrderTrendChart data={data?.orderTrend || []} />
+            </section>
+          </div>
 
           {/* Branch comparison */}
           {showComparison && (
-            <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
+            <section className="surface-card space-y-3 p-4">
               <h2 className="font-display text-base font-semibold tracking-tight">Filiallar taqqoslashi</h2>
               <BranchComparison branches={data.branchComparison} businessId={businessId} />
             </section>

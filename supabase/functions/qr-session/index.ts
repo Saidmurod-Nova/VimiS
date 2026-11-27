@@ -76,52 +76,6 @@ async function authenticate(request: Request) {
   return { user: data.user, accessToken, sessionId: claims.session_id as string };
 }
 
-async function createQr(request: Request) {
-  const { user } = await authenticate(request);
-  if (!user.email) return json({ error: "Email hisob mavjud emas." }, 400);
-
-  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-    type: "magiclink",
-    email: user.email,
-  });
-  if (linkError || !linkData.properties.hashed_token) {
-    return json({ error: "QR kod yaratib bo'lmadi." }, 400);
-  }
-
-  const id = crypto.randomUUID();
-  const secretBytes = crypto.getRandomValues(new Uint8Array(32));
-  const secret = bytesToBase64(secretBytes).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-  const secretDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
-  const secretHash = Array.from(new Uint8Array(secretDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-  const expiresAt = new Date(Date.now() + 90_000).toISOString();
-
-  const { error: insertError } = await admin.from("qr_login_challenges").insert({
-    id,
-    user_id: user.id,
-    token_hash: linkData.properties.hashed_token,
-    secret_hash: secretHash,
-    expires_at: expiresAt,
-  });
-  if (insertError) return json({ error: "QR kod saqlanmadi." }, 500);
-
-  await admin.from("qr_login_challenges").delete().lt("expires_at", new Date(Date.now() - 86_400_000).toISOString());
-  return json({ qr: JSON.stringify({ type: "vimis-session", id, secret }), expiresAt });
-}
-
-async function consumeQr(body: Record<string, unknown>) {
-  if (typeof body.id !== "string" || typeof body.secret !== "string" || body.secret.length > 128) {
-    return json({ error: "QR kod yaroqsiz." }, 400);
-  }
-  const secretDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(body.secret));
-  const secretHash = Array.from(new Uint8Array(secretDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-  const { data: tokenHash, error } = await admin.rpc("vimi_consume_qr_login", {
-    p_challenge_id: body.id,
-    p_secret_hash: secretHash,
-  });
-  if (error || typeof tokenHash !== "string") return json({ error: "QR kod ishlatilgan yoki muddati tugagan." }, 410);
-  return json({ tokenHash });
-}
-
 async function registerSession(request: Request, body: Record<string, unknown>) {
   const { user, sessionId } = await authenticate(request);
   if (typeof body.refreshToken !== "string" || body.refreshToken.length < 20) {
@@ -204,8 +158,6 @@ Deno.serve(async (request) => {
   try {
     const body = await request.json() as Record<string, unknown>;
     switch (body.action) {
-      case "create-qr": return await createQr(request);
-      case "consume-qr": return await consumeQr(body);
       case "register-session": return await registerSession(request, body);
       case "list-sessions": return await listSessions(request);
       case "revoke-session": return await revokeSession(request, body);

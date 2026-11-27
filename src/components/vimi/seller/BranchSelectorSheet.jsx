@@ -1,12 +1,13 @@
 import React from "react";
-import { MapPin, Check, ChevronDown } from "lucide-react";
+import { MapPin, Check, ChevronDown, Plus } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { PrimaryButton } from "../VimiButton";
 
 // Branch selector for the seller console. Includes an "All branches" option;
 // selecting a specific branch scopes all branch-dependent metrics. When the
 // business has a single active branch it is selected by default upstream.
-export default function BranchSelectorSheet({ branches, selectedId, onSelect, disabled, triggerClassName }) {
+export default function BranchSelectorSheet({ branches, selectedId, onSelect, onAddBranch, disabled, triggerClassName }) {
   const [open, setOpen] = React.useState(false);
   const selected = selectedId === "all" || !selectedId
     ? null
@@ -34,7 +35,7 @@ export default function BranchSelectorSheet({ branches, selectedId, onSelect, di
         <SheetHeader className="px-5 pt-6 pb-2 text-left">
           <SheetTitle>Filialni tanlash</SheetTitle>
         </SheetHeader>
-        <div className="max-h-[60vh] space-y-2 overflow-y-auto px-4 pb-6 pt-2">
+        <div className="max-h-[60vh] space-y-2 overflow-y-auto px-4 pb-2 pt-2">
           <button
             type="button"
             onClick={() => { onSelect("all"); setOpen(false); }}
@@ -78,6 +79,20 @@ export default function BranchSelectorSheet({ branches, selectedId, onSelect, di
             );
           })}
         </div>
+        {onAddBranch && (
+          <div className="border-t border-border px-4 py-4">
+            <PrimaryButton
+              className="h-12 w-full"
+              onClick={() => {
+                setOpen(false);
+                onAddBranch();
+              }}
+            >
+              <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
+              Filial qo‘shish
+            </PrimaryButton>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

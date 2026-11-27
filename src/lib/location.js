@@ -39,14 +39,33 @@ export async function detectNearestLocation(coords) {
   };
 }
 
-// Promisified geolocation; rejects on denial/timeout so the UI can fall back to manual.
+function geolocationError(error) {
+  const messages = {
+    1: "Joylashuvga ruxsat berilmadi. Brauzer sozlamalaridan ruxsat bering yoki hududni qo‘lda tanlang.",
+    2: "Brauzer joylashuv xizmatidan koordinata olib bo‘lmadi. Qurilmada Location/GPS va internetni tekshiring yoki hududni qo‘lda tanlang.",
+    3: "Joylashuvni aniqlash vaqti tugadi. Ochiqroq joyda qayta urinib ko‘ring yoki hududni qo‘lda tanlang.",
+  };
+  const result = new Error(messages[error?.code] || error?.message || "Joylashuvni aniqlab bo‘lmadi.");
+  result.code = error?.code;
+  result.name = error?.name || "GeolocationPositionError";
+  return result;
+}
+
+// Promisified geolocation; rejects with actionable errors so the UI can fall back to manual selection.
 export function getCurrentPosition() {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) return reject(new Error("Geolocation mavjud emas"));
+    if (!globalThis.isSecureContext) {
+      reject(new Error("Telefonni WLAN IP manzili orqali ulagan bo‘lsangiz, bu manzil ishonchli HTTPS sertifikatiga ega bo‘lishi kerak. Lokal HTTPS sozlash yo‘riqnomasini bajaring yoki publish qilingan HTTPS manzilidan foydalaning."));
+      return;
+    }
+    if (!navigator.geolocation) {
+      reject(new Error("Bu qurilma yoki brauzer joylashuvni aniqlashni qo‘llab-quvvatlamaydi."));
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      (err) => reject(err),
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+      (error) => reject(geolocationError(error)),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
     );
   });
 }

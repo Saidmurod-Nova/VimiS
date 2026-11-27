@@ -3,9 +3,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function EmptyState({ icon: Icon, title, description, action, className }) {
+export function EmptyState({ icon: Icon = null, title, description = "", action = null, className = "" }) {
   return (
-    <div className={cn("flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 px-6 py-10 text-center", className)}>
+    <div className={cn("flex min-h-48 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/70 px-6 py-10 text-center", className)}>
       {Icon && (
         <span className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
           <Icon className="w-5 h-5" aria-hidden="true" />
@@ -18,9 +18,9 @@ export function EmptyState({ icon: Icon, title, description, action, className }
   );
 }
 
-export function ErrorState({ title = "Nimadir xato ketdi", description = "Qayta urinib ko'ring.", onRetry, className }) {
+export function ErrorState({ title = "Nimadir xato ketdi", description = "Qayta urinib ko'ring.", onRetry, className = "" }) {
   return (
-    <div className={cn("flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-6 py-10 text-center", className)}>
+    <div className={cn("flex min-h-48 flex-col items-center justify-center rounded-lg border border-border bg-card px-6 py-10 text-center", className)}>
       <span className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
         <AlertCircle className="w-5 h-5" aria-hidden="true" />
       </span>
@@ -35,7 +35,7 @@ export function ErrorState({ title = "Nimadir xato ketdi", description = "Qayta 
   );
 }
 
-export function LoadingState({ className }) {
+export function LoadingState({ className = "" }) {
   return (
     <div className={cn("space-y-3", className)}>
       <Skeleton className="h-12 w-full rounded-xl" />

@@ -7,14 +7,14 @@ import SavedStoreCard from "@/components/vimi/SavedStoreCard";
 import ProductCard from "@/components/vimi/ProductCard";
 import LocationSheet from "@/components/vimi/LocationSheet";
 import ConfirmDialog from "@/components/vimi/ConfirmDialog";
-import { EmptyState, LoadingState } from "@/components/vimi/States";
+import { EmptyState, ErrorState, LoadingState } from "@/components/vimi/States";
 import { useBuyer } from "@/lib/BuyerContext";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseMode } from "@/lib/supabase";
 import { listPublicCategories, listProducts } from "@/lib/supabaseCatalog";
 import { useToast } from "@/components/ui/use-toast";
 
-function SectionHeader({ title, action }) {
+function SectionHeader({ title, action = null }) {
   return (
     <div className="flex items-center justify-between">
       <h2 className="text-sm font-semibold text-foreground">{title}</h2>
@@ -33,19 +33,36 @@ export default function Home() {
   const [removeId, setRemoveId] = useState(null);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [catalogError, setCatalogError] = useState("");
+  const [catalogRetryKey, setCatalogRetryKey] = useState(0);
 
   useEffect(() => {
     let active = true;
-    if (isSupabaseMode) {
-      Promise.all([listPublicCategories(), listProducts({ limit: 8 })])
-        .then(([cats, prods]) => { if (active) { setCategories(cats || []); setProducts(prods || []); } })
-        .catch((err) => { console.error('Supabase buyer home load failed', err); });
-    } else {
-      base44.entities.Category.list().then((rows) => { if (active) setCategories(rows || []); }).catch(() => {});
-      base44.entities.Product.filter({ is_active: true }, "-created_date", 8).then((rows) => { if (active) setProducts(rows || []); }).catch(() => {});
-    }
+    setCatalogError("");
+    const loadHighlights = async () => {
+      try {
+        const [cats, prods] = isSupabaseMode
+          ? await Promise.all([listPublicCategories(), listProducts({ limit: 8 })])
+          : await Promise.all([
+              base44.entities.Category.list(),
+              base44.entities.Product.filter({ is_active: true }, "-created_date", 8),
+            ]);
+        if (active) {
+          setCategories((cats || []).filter((category) => !category.parent_id));
+          setProducts(prods || []);
+        }
+      } catch (error) {
+        console.error("Marketplace mahsulotlarini yuklab bo‘lmadi.", error);
+        if (active) {
+          setCatalogError(error?.message || "Marketplace mahsulotlarini yuklab bo‘lmadi.");
+          setCategories([]);
+          setProducts([]);
+        }
+      }
+    };
+    loadHighlights();
     return () => { active = false; };
-  }, []);
+  }, [catalogRetryKey]);
 
   const onConnect = async (e) => {
     e.preventDefault();
@@ -77,9 +94,14 @@ export default function Home() {
   const favorites = stores.favorites;
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <h1>VimiS — Do‘konlar va mahsulotlarni bir joyda toping</h1>
-      <header className="flex items-center justify-between gap-3">
+    <div className="workspace-page animate-fade-in space-y-6">
+      <header className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-primary">VireonSpes Marketplace</p>
+          <h1 className="mt-1 max-w-3xl font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+            Mahalliy do‘konlar va mahsulotlarni kashf eting
+          </h1>
+        </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => setLocOpen(true)} className="inline-flex max-w-[40vw] items-center gap-1.5 rounded-full bg-secondary px-3 py-2 text-sm font-medium text-foreground">
             <MapPin className="w-4 h-4 text-primary" aria-hidden="true" />
@@ -89,28 +111,30 @@ export default function Home() {
         </div>
       </header>
 
-      <button type="button" onClick={() => navigate("/search")} className="relative block w-full">
-        <SearchIcon className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-        <div className="flex h-12 w-full items-center rounded-xl border-transparent bg-secondary/70 pl-11 text-left text-muted-foreground">
-          Do'kon yoki mahsulot qidirish
-        </div>
-      </button>
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.7fr)_minmax(300px,1fr)]">
+        <button type="button" onClick={() => navigate("/search")} className="relative block w-full self-start">
+          <SearchIcon className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <div className="flex h-12 w-full items-center rounded-lg border border-border bg-card pl-11 text-left text-muted-foreground transition hover:border-primary/40">
+            Do‘kon yoki mahsulot qidirish
+          </div>
+        </button>
 
-      <div className="glass rounded-2xl p-4">
-        <p className="text-sm font-medium text-foreground">Do'kon ID orqali kirish</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">Do'kon ID sini kiriting va to'g'ridan-to'g'ri kirish.</p>
-        <form className="mt-3 flex gap-2" onSubmit={onConnect}>
-          <TextInput
-            placeholder="Do'kon ID sini kiriting"
-            value={storeCode}
-            onChange={(e) => setStoreCode(e.target.value)}
-            className="flex-1"
-          />
-          <PrimaryButton type="submit" className="h-12 shrink-0"  disabled={connecting}>
-            <ArrowRight className="mr-1 h-4 w-4" aria-hidden="true" />
-            Kirish
-          </PrimaryButton>
-        </form>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="text-sm font-semibold text-foreground">Do‘kon ID orqali kirish</p>
+          <p className="mt-1 text-xs text-muted-foreground">Do‘kon ID sini kiriting va do‘konga o‘ting.</p>
+          <form className="mt-3 flex gap-2" onSubmit={onConnect}>
+            <TextInput
+              placeholder="Do‘kon ID"
+              value={storeCode}
+              onChange={(e) => setStoreCode(e.target.value)}
+              className="min-w-0 flex-1"
+            />
+            <PrimaryButton type="submit" className="h-11 shrink-0 rounded-lg px-3" disabled={connecting}>
+              <ArrowRight className="mr-1 h-4 w-4" aria-hidden="true" />
+              Kirish
+            </PrimaryButton>
+          </form>
+        </div>
       </div>
 
       {loading ? (
@@ -120,9 +144,9 @@ export default function Home() {
           {recentlyVisited.length > 0 && (
             <section className="space-y-3">
               <SectionHeader title="So'nggi tashriflar" />
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                 {recentlyVisited.slice(0, 10).map((e) => (
-                  <SavedStoreCard key={e.saved.id} entry={e} onView={() => navigate(`/store/${e.business.store_id}`)} onRemove={setRemoveId} className="w-72 shrink-0" />
+                  <SavedStoreCard key={e.saved.id} entry={e} onView={() => navigate(`/store/${e.business.store_id}`)} onRemove={setRemoveId} className="w-full" />
                 ))}
               </div>
             </section>
@@ -133,9 +157,9 @@ export default function Home() {
             {favorites.length === 0 ? (
               <EmptyState icon={Heart} title="Hozircha sevimli do'konlar yo'q" description="Qidirish orqali do'konlarni sevimlilarga qo'shing." action={<PrimaryButton onClick={() => navigate("/search")} className="h-10">Do'kon qidirish</PrimaryButton>} />
             ) : (
-              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                 {favorites.slice(0, 10).map((e) => (
-                  <SavedStoreCard key={e.favorite_id} entry={{ ...e, saved: { id: e.favorite_id } }} onView={() => navigate(`/store/${e.business.store_id}`)} onRemove={() => {}} className="w-72 shrink-0" />
+                  <SavedStoreCard key={e.favorite_id} entry={{ ...e, saved: { id: e.favorite_id } }} onView={() => navigate(`/store/${e.business.store_id}`)} showRemove={false} className="w-full" />
                 ))}
               </div>
             )}
@@ -146,9 +170,9 @@ export default function Home() {
             {stores.items.length === 0 ? (
               <EmptyState icon={Store} title="Hozircha do'konlar yo'q" description="Do'kon ID orqali ulanib, shu yerda saqlang." />
             ) : (
-              <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                 {stores.items.map((e) => (
-                  <SavedStoreCard key={e.saved.id} entry={e} onView={() => navigate(`/store/${e.business.store_id}`)} onRemove={setRemoveId} />
+                  <SavedStoreCard key={e.saved.id} entry={e} onView={() => navigate(`/store/${e.business.store_id}`)} onRemove={setRemoveId} className="w-full" />
                 ))}
               </div>
             )}
@@ -171,10 +195,12 @@ export default function Home() {
 
       <section className="space-y-3">
         <SectionHeader title="Tavsiya etilgan mahsulotlar" action={<button type="button" onClick={() => navigate("/search")} className="text-xs font-medium text-primary">Barchasi</button>} />
-        {products.length === 0 ? (
+        {catalogError ? (
+          <ErrorState title={catalogError} onRetry={() => setCatalogRetryKey((key) => key + 1)} />
+        ) : products.length === 0 ? (
           <EmptyState icon={Sparkles} title="Hozircha mahsulotlar yo'q" description="Do'konlar mahsulot qo'shganda shu yerda paydo bo'ladi." />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {products.map((p) => (
               <ProductCard key={p.id} name={p.name} price={p.price} image={p.image_url} onClick={() => navigate(`/product/${p.id}`)} />
             ))}

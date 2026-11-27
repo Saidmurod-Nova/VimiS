@@ -9,14 +9,6 @@ async function invokeSessionAction(action, payload = {}) {
   return data;
 }
 
-export function createLoginQr() {
-  return invokeSessionAction("create-qr");
-}
-
-export function consumeLoginQr(id, secret) {
-  return invokeSessionAction("consume-qr", { id, secret });
-}
-
 export function registerCurrentSession(refreshToken) {
   const userAgent = navigator.userAgent;
   const deviceName = /Android|iPhone|iPad|Mobile/i.test(userAgent) ? "Mobil qurilma" : "Kompyuter";

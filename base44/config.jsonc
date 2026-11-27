@@ -1,5 +1,5 @@
 {
-  "name": "Vimi",
+  "name": "VireonSpes",
   "site": {
     "installCommand": "npm install",
     "buildCommand": "npm run build",

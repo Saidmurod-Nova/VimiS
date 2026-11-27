@@ -42,7 +42,7 @@ export default function Locations() {
         <section className="space-y-3">
           <h2 className="font-display text-base font-semibold">Sotuvchi joylashuvlari</h2>
           <SettingsList>
-            <SettingsRow icon={Store} label={`${selectedBusiness.name} filiallari`} onClick={() => navigate(`/seller/businesses/${selectedBusiness.id}`)} />
+            <SettingsRow icon={Store} label={`${selectedBusiness.name} filiallari`} onClick={() => navigate(`/business/${selectedBusiness.id}/settings?tab=branches`)} />
           </SettingsList>
         </section>
       )}

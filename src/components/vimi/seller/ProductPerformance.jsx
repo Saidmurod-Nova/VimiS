@@ -4,7 +4,6 @@ import { Image } from "@/components/ui/image";
 import { Package } from "lucide-react";
 import { formatSoM } from "@/lib/inventory";
 import { EmptyState } from "../States";
-import { cn } from "@/lib/utils";
 
 // Product performance from completed OrderItem snapshots: quantity sold,
 // completed revenue, and current stock. Clicking opens the product detail.
@@ -19,8 +18,8 @@ export default function ProductPerformance({ products, businessId }) {
         <button
           key={(p.productId || p.name) + i}
           type="button"
-          onClick={() => p.productId && navigate(`/seller/products/${p.productId}`)}
-          className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-3 text-left transition active:scale-[0.99]"
+          onClick={() => p.productId && navigate(`/business/${businessId}/products/${p.productId}`)}
+          className="flex w-full items-center gap-3 border-b border-border bg-card px-3 py-3 text-left transition last:border-b-0 hover:bg-secondary/40"
         >
           <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-secondary">
             {p.image_url ? (

@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useCallback } fr
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { isSupabaseConfigured, supabase, getAuthProvider, getAuthErrorMessage } from '@/lib/supabase';
-import { registerCurrentSession } from '@/lib/qrSessions';
+import { registerCurrentSession } from '@/lib/userSessions';
 
 /**
  * @typedef {object} AuthProfile

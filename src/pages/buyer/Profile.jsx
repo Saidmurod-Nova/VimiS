@@ -1,28 +1,33 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Pencil, MapPinned, Briefcase, RefreshCw, LogOut, Loader2, MonitorSmartphone, QrCode, ShieldCheck, X, MessageCircle } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { MapPin, Pencil, MapPinned, Briefcase, RefreshCw, LogOut, Loader2, MonitorSmartphone, ShieldCheck, X, MessageCircle, ChevronRight } from "lucide-react";
 import Avatar from "@/components/vimi/Avatar";
 import { SettingsList, SettingsRow } from "@/components/vimi/SettingsList";
 import { useAuth } from "@/lib/AuthContext";
 import { useBuyer } from "@/lib/BuyerContext";
+import { useBusiness } from "@/lib/BusinessContext";
 import { isSupabaseMode } from "@/lib/supabase";
-import { createLoginQr, listUserSessions, revokeOtherUserSessions, revokeUserSession } from "@/lib/qrSessions";
-import { PrimaryButton, SecondaryButton } from "@/components/vimi/VimiButton";
+import { listUserSessions, revokeOtherUserSessions, revokeUserSession } from "@/lib/userSessions";
+import { SecondaryButton } from "@/components/vimi/VimiButton";
 import ConfirmDialog from "@/components/vimi/ConfirmDialog";
+import { AvailabilityControl } from "@/components/courier/CourierUI";
+import BusinessSelectorSheet from "@/components/vimi/seller/BusinessSelectorSheet";
 
 export default function Profile() {
   const { user, logout } = useAuth();
   const { selectedLocation } = useBuyer();
+  const { businesses, loading: businessesLoading } = useBusiness();
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
-  const [qr, setQr] = useState(null);
-  const [secondsLeft, setSecondsLeft] = useState(0);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [busyAction, setBusyAction] = useState("");
   const [sessionError, setSessionError] = useState("");
   const [confirmRevokeOthers, setConfirmRevokeOthers] = useState(false);
   const locLabel = selectedLocation?.city || selectedLocation?.region || "Joylashuv tanlanmagan";
+
+  const handleBusinessSelect = (businessId) => {
+    navigate(`/business/${businessId}`);
+  };
 
   const loadSessions = async () => {
     setLoadingSessions(true);
@@ -40,30 +45,6 @@ export default function Profile() {
   useEffect(() => {
     if (isSupabaseMode) loadSessions();
   }, []);
-
-  useEffect(() => {
-    if (!qr) return undefined;
-    const updateCountdown = () => {
-      const remaining = Math.max(0, Math.ceil((new Date(qr.expiresAt).getTime() - Date.now()) / 1000));
-      setSecondsLeft(remaining);
-      if (remaining === 0) setQr(null);
-    };
-    updateCountdown();
-    const timer = window.setInterval(updateCountdown, 1000);
-    return () => window.clearInterval(timer);
-  }, [qr]);
-
-  const onCreateQr = async () => {
-    setBusyAction("qr");
-    setSessionError("");
-    try {
-      setQr(await createLoginQr());
-    } catch (error) {
-      setSessionError(error?.message || "QR kod yaratib bo‘lmadi.");
-    } finally {
-      setBusyAction("");
-    }
-  };
 
   const onRevokeSession = async (sessionId) => {
     setBusyAction(sessionId);
@@ -92,7 +73,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="workspace-page animate-fade-in space-y-6">
       <h1 className="font-display text-2xl font-semibold tracking-tight">Profil</h1>
 
       <div className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4">
@@ -106,10 +87,38 @@ export default function Profile() {
         </div>
       </div>
 
+      <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold">Kuryerlik rejimi</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Shu hisobingiz bilan kuryer interfeysiga o‘ting.</p>
+          </div>
+          <button type="button" onClick={() => navigate("/courier")} className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            Kuryerlik bo‘limini ochish
+          </button>
+        </div>
+        <AvailabilityControl compact />
+      </section>
+
       <SettingsList>
         <SettingsRow icon={Pencil} label="Profilni tahrirlash" onClick={() => navigate("/profile/edit")} />
         <SettingsRow icon={MapPinned} label="Joylashuvlar" onClick={() => navigate("/locations", { state: { from: "/profile" } })} />
-        <SettingsRow icon={Briefcase} label="Mening bizneslarim" onClick={() => {}} />
+        <BusinessSelectorSheet
+          businesses={businesses}
+          selectedBusiness={null}
+          loading={businessesLoading}
+          title="Mening bizneslarim"
+          onSelect={handleBusinessSelect}
+          triggerContent={
+            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-secondary/40">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-secondary">
+                <Briefcase className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <span className="flex-1 text-sm font-medium">Mening bizneslarim</span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            </button>
+          }
+        />
         <SettingsRow icon={MessageCircle} label="Telegram botlari" onClick={() => navigate("/profile/telegram")} />
       </SettingsList>
 
@@ -123,27 +132,6 @@ export default function Profile() {
             <SecondaryButton className="h-9 px-3 text-xs" onClick={() => setConfirmRevokeOthers(true)} disabled={!!busyAction || sessions.filter((session) => !session.isCurrent).length === 0}>
               {busyAction === "others" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Boshqalarini chiqarish"}
             </SecondaryButton>
-          </div>
-
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm text-muted-foreground">Yangi qurilmada kirish uchun bir martalik QR kod yarating va uni Login sahifasida skaner qiling.</p>
-              <PrimaryButton className="mt-3 h-10" onClick={onCreateQr} disabled={!!busyAction}>
-                {busyAction === "qr" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <QrCode className="mr-2 h-4 w-4" />}
-                QR kod yaratish
-              </PrimaryButton>
-            </div>
-            {qr && (
-              <div className="flex shrink-0 flex-col items-center gap-2 self-center rounded-lg border border-border bg-card p-3">
-                <QRCodeSVG value={qr.qr} size={168} level="M" includeMargin title="Bir martalik Vimi login QR kodi" />
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>{secondsLeft} soniya qoldi</span>
-                  <button type="button" onClick={() => setQr(null)} aria-label="QR kodni yopish" className="rounded p-1 hover:bg-secondary hover:text-foreground">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           {sessionError && <p role="alert" className="text-sm text-destructive">{sessionError}</p>}

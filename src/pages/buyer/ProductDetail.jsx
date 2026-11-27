@@ -3,12 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseMode } from "@/lib/supabase";
 import { getProduct, getPublicBusinessById, listBranches, getBranchCatalogSupabase } from "@/lib/supabaseCatalog";
-import { Store as StoreIcon, ShoppingBag, MapPin, Loader2 } from "lucide-react";
+import { ShoppingBag, MapPin, Loader2 } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import Price from "@/components/vimi/Price";
 import AvailabilityBadge from "@/components/vimi/AvailabilityBadge";
 import { PrimaryButton } from "@/components/vimi/VimiButton";
-import { LoadingState, EmptyState, ErrorState } from "@/components/vimi/States";
+import { LoadingState, ErrorState } from "@/components/vimi/States";
 import { Image } from "@/components/ui/image";
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -31,6 +31,8 @@ export default function ProductDetail() {
   const [catalog, setCatalog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogError, setCatalogError] = useState("");
+  const [catalogRetryKey, setCatalogRetryKey] = useState(0);
   const [error, setError] = useState("");
   const [selectedBranchId, setSelectedBranchId] = useState(branchId || null);
   const { addItem } = useCart();
@@ -39,42 +41,60 @@ export default function ProductDetail() {
 
   // Load product + business + active branches.
   useEffect(() => {
+    let isCurrent = true;
     (async () => {
       setLoading(true); setError(""); setProduct(null); setBusiness(null); setBranches([]); setCatalog(null);
       try {
         const p = isSupabaseMode ? await getProduct(productId) : await base44.entities.Product.get(productId);
-        if (!p || !p.is_active) { setError("Mahsulot topilmadi"); return; }
-        setProduct(p);
+        if (!p || !p.is_active) { if (isCurrent) setError("Mahsulot topilmadi"); return; }
+        if (isCurrent) setProduct(p);
         const b = isSupabaseMode ? await getPublicBusinessById(p.business_id) : await base44.entities.Business.get(p.business_id);
-        if (!b || !b.is_active) { setError("Do'kon hozirda mavjud emas"); return; }
-        setBusiness(b);
+        if (!b || !b.is_active) { if (isCurrent) setError("Do'kon hozirda mavjud emas"); return; }
+        if (isCurrent) setBusiness(b);
         const br = isSupabaseMode ? await listBranches(b.id) : await base44.entities.Branch.filter({ business_id: b.id });
-        const active = (br || []).filter((x) => x.is_active);
-        setBranches(active);
-        const paramValid = branchId && active.some((x) => x.id === branchId);
-        if (paramValid) setSelectedBranchId(branchId);
-        else if (active.length === 1) setSelectedBranchId(active[0].id);
-        else setSelectedBranchId(null);
+        const activeBranches = (br || []).filter((x) => x.is_active);
+        if (isCurrent) {
+          setBranches(activeBranches);
+          const paramValid = branchId && activeBranches.some((x) => x.id === branchId);
+          if (paramValid) setSelectedBranchId(branchId);
+          else if (activeBranches.length === 1) setSelectedBranchId(activeBranches[0].id);
+          else setSelectedBranchId(null);
+        }
       } catch (e) {
-        setError(e?.response?.data?.error || "Mahsulot yuklanmadi");
+        if (isCurrent) setError(e?.response?.data?.error || "Mahsulot yuklanmadi");
       } finally {
-        setLoading(false);
+        if (isCurrent) setLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId]);
+    return () => { isCurrent = false; };
+  }, [productId, branchId]);
 
   // Load branch catalog when a branch is selected.
   useEffect(() => {
-    if (!selectedBranchId || !business) return;
+    if (!selectedBranchId || !business) {
+      setCatalog(null);
+      setCatalogLoading(false);
+      setCatalogError("");
+      return;
+    }
+    let active = true;
     setCatalogLoading(true);
+    setCatalog(null);
+    setCatalogError("");
     const request = isSupabaseMode
       ? getBranchCatalogSupabase(selectedBranchId)
       : base44.functions.invoke("getBranchCatalog", { branch_id: selectedBranchId }).then((res) => res.data);
-    request.then(setCatalog)
-      .catch(() => setCatalog(null))
-      .finally(() => setCatalogLoading(false));
-  }, [selectedBranchId, business]);
+    request.then((result) => {
+      if (active) setCatalog(result);
+    })
+      .catch((loadError) => {
+        if (active) setCatalogError(loadError?.response?.data?.error || loadError?.message || "Filial katalogini yuklab bo‘lmadi.");
+      })
+      .finally(() => {
+        if (active) setCatalogLoading(false);
+      });
+    return () => { active = false; };
+  }, [selectedBranchId, business, catalogRetryKey]);
 
   if (loading) return <div className="space-y-4"><PageHeader title="Mahsulot" backTo={branchId ? `/branch/${branchId}/products` : "/"} /><LoadingState /></div>;
   if (error) return <div className="space-y-4"><PageHeader title="Mahsulot" backTo={branchId ? `/branch/${branchId}/products` : "/"} /><ErrorState title={error} /></div>;
@@ -119,18 +139,18 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className="animate-fade-in space-y-5">
+    <div className="workspace-page animate-fade-in space-y-5">
       <PageHeader title={product.name} backTo={branchId ? `/branch/${branchId}/products` : business ? `/store/${business.store_id}` : "/"} />
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="aspect-square w-full bg-secondary">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card lg:grid lg:grid-cols-2">
+        <div className="aspect-square w-full bg-secondary lg:aspect-auto lg:min-h-[440px]">
           {product.image_url ? <Image src={product.image_url} alt={product.name} fittingType="fill" className="h-full w-full" /> : <div className="flex h-full w-full items-center justify-center"><ShoppingBag className="h-12 w-12 text-muted-foreground/40" /></div>}
         </div>
-        <div className="space-y-3 p-4">
+        <div className="space-y-3 p-4 sm:p-6 lg:p-8">
           {product.category_name && <p className="text-xs text-muted-foreground">{product.category_name}</p>}
           <h2 className="text-xl font-semibold">{product.name}</h2>
           {business && <button type="button" onClick={() => navigate(`/store/${business.store_id}`)} className="inline-flex items-center gap-1 text-xs text-primary">{business.name}</button>}
-          {item ? <Price value={item.effective_price} size="lg" /> : <p className="text-sm text-muted-foreground">Filial tanlang</p>}
+          {item ? <Price value={item.effective_price} size="lg" /> : <p className="text-sm text-muted-foreground">{catalogLoading ? "Narx va mavjudlik yuklanmoqda…" : "Filial tanlang"}</p>}
           {item && <AvailabilityBadge available={item.available} disabled={item.disabled} hasInventory={item.has_inventory} />}
           {product.description && <p className="whitespace-pre-line pt-1 text-sm text-muted-foreground">{product.description}</p>}
         </div>
@@ -152,6 +172,7 @@ export default function ProductDetail() {
             </SelectContent>
           </Select>
         )}
+        {catalogError ? <ErrorState title={catalogError} onRetry={() => setCatalogRetryKey((key) => key + 1)} /> : null}
         {selectedBranch && (
           <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
             <MapPin className="h-3 w-3" />{[selectedBranch.city, selectedBranch.region].filter(Boolean).join(", ")}{selectedBranch.address ? " · " + selectedBranch.address : ""}

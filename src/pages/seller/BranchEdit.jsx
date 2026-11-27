@@ -5,21 +5,32 @@ import { getBranch as getBranchSupabase, updateBranch as updateBranchSupabase } 
 import PageHeader from "@/components/vimi/PageHeader";
 import BranchForm from "@/components/vimi/BranchForm";
 import { useToast } from "@/components/ui/use-toast";
-import { LoadingState, EmptyState } from "@/components/vimi/States";
+import { LoadingState, EmptyState, ErrorState } from "@/components/vimi/States";
 
 export default function BranchEdit() {
-  const { id, branchId } = useParams();
+  const { id, businessId, branchId } = useParams();
+  const ownerBusinessId = businessId || id;
   const navigate = useNavigate();
   const { toast } = useToast();
   const [branch, setBranch] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     (async () => {
-      try { setBranch(import.meta.env.VITE_AUTH_PROVIDER === "supabase" ? await getBranchSupabase(branchId) : await base44.entities.Branch.get(branchId)); } catch (e) { console.error(e); } finally { setLoading(false); }
+      setError("");
+      try {
+        const record = import.meta.env.VITE_AUTH_PROVIDER === "supabase"
+          ? await getBranchSupabase(branchId)
+          : await base44.entities.Branch.get(branchId);
+        setBranch(record?.business_id === ownerBusinessId ? record : null);
+      } catch (e) {
+        console.error("Filialni yuklab bo‘lmadi.", e);
+        setError(e?.message || "Filialni yuklab bo‘lmadi.");
+      } finally { setLoading(false); }
     })();
-  }, [branchId]);
+  }, [branchId, ownerBusinessId]);
 
   const onSubmit = async (data) => {
     setSaving(true);
@@ -31,13 +42,14 @@ export default function BranchEdit() {
         await updateBranchSupabase(branchId, patch);
       } else await base44.functions.invoke("updateBranch", payload);
       toast({ title: "Filial yangilandi" });
-      navigate(`/seller/businesses/${id}/branches/${branchId}`);
+      navigate(`/business/${ownerBusinessId}/branches/${branchId}`);
     } catch (err) {
       toast({ title: err.response?.data?.error || "Yangilanmadi", variant: "destructive" });
     } finally { setSaving(false); }
   };
 
-  if (loading) return <div className="space-y-4"><PageHeader title="Tahrirlash" backTo={`/seller/businesses/${id}/branches/${branchId}`} /><LoadingState /></div>;
-  if (!branch) return <div className="space-y-4"><PageHeader title="Tahrirlash" backTo={`/seller/businesses/${id}/branches/${branchId}`} /><EmptyState title="Filial topilmadi" /></div>;
-  return <div className="animate-fade-in space-y-6"><PageHeader title="Filialni tahrirlash" backTo={`/seller/businesses/${id}/branches/${branchId}`} /><BranchForm initial={branch} onSubmit={onSubmit} loading={saving} submitLabel="Saqlash" /></div>;
+  if (loading) return <div className="space-y-4"><PageHeader title="Tahrirlash" backTo={`/business/${ownerBusinessId}/branches/${branchId}`} /><LoadingState /></div>;
+  if (error) return <div className="space-y-4"><PageHeader title="Tahrirlash" backTo={`/business/${ownerBusinessId}/branches/${branchId}`} /><ErrorState title={error} /></div>;
+  if (!branch) return <div className="space-y-4"><PageHeader title="Tahrirlash" backTo={`/business/${ownerBusinessId}/branches/${branchId}`} /><EmptyState title="Filial topilmadi" /></div>;
+  return <div className="animate-fade-in space-y-6"><PageHeader title="Filialni tahrirlash" backTo={`/business/${ownerBusinessId}/branches/${branchId}`} /><BranchForm initial={branch} onSubmit={onSubmit} loading={saving} submitLabel="Saqlash" /></div>;
 }

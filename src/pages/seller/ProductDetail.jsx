@@ -1,13 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/lib/BusinessContext";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, Pencil, Archive, PackageOpen, AlertCircle, Store } from "lucide-react";
+import { Plus, Pencil, Archive, AlertCircle, Store } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import Price from "@/components/vimi/Price";
 import StockBadge from "@/components/vimi/StockBadge";
-import AvailabilityBadge from "@/components/vimi/AvailabilityBadge";
 import { PrimaryButton, SecondaryButton, GhostButton } from "@/components/vimi/VimiButton";
 import { LoadingState, EmptyState } from "@/components/vimi/States";
 import InventoryEditSheet from "@/components/vimi/InventoryEditSheet";
@@ -16,9 +15,9 @@ import { Image } from "@/components/ui/image";
 import { formatSoM, effectivePrice } from "@/lib/inventory";
 
 export default function ProductDetail() {
-  const { id } = useParams();
+  const { id, businessId } = useParams();
   const navigate = useNavigate();
-  const { selectedBusiness, selectBusiness } = useBusiness();
+  const { selectedBusiness } = useBusiness();
   const { toast } = useToast();
   const [product, setProduct] = useState(null);
   const [branches, setBranches] = useState([]);
@@ -27,36 +26,46 @@ export default function ProductDetail() {
   const [editBranch, setEditBranch] = useState(null); // branch being edited
   const [assignOpen, setAssignOpen] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const requestId = useRef(0);
 
   const load = async () => {
-    setLoading(true);
+    const currentRequest = ++requestId.current;
+    const targetBusinessId = businessId || selectedBusiness?.id;
+    setLoading(true); setProduct(null); setBranches([]); setInventory([]);
     try {
       const { data: p, error: productError } = await supabase
         .from("products")
         .select("*")
         .eq("id", id)
+        .eq("business_id", targetBusinessId)
         .maybeSingle();
       if (productError) throw productError;
+      if (currentRequest !== requestId.current) return;
       setProduct(p);
       if (p) {
-        selectBusiness(p.business_id);
         const [branchesResult, inventoryResult] = await Promise.all([
-          supabase.from("branches").select("*").eq("business_id", p.business_id).order("name"),
-          supabase.from("branch_inventory").select("*").eq("product_id", p.id)
+          supabase.from("branches").select("*").eq("business_id", targetBusinessId).order("name"),
+          supabase.from("branch_inventory").select("*").eq("product_id", p.id).eq("business_id", targetBusinessId)
         ]);
         if (branchesResult.error) throw branchesResult.error;
         if (inventoryResult.error) throw inventoryResult.error;
+        if (currentRequest !== requestId.current) return;
         setBranches(branchesResult.data || []);
         setInventory(inventoryResult.data || []);
       }
-    } catch {
+    } catch (error) {
+      if (currentRequest !== requestId.current) return;
+      console.error("Mahsulot ma’lumotlarini yuklab bo‘lmadi.", error);
+      toast({ title: error?.message || "Mahsulot ma’lumotlarini yuklab bo‘lmadi.", variant: "destructive" });
       setProduct(null);
+      setBranches([]);
+      setInventory([]);
     } finally {
-      setLoading(false);
+      if (currentRequest === requestId.current) setLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => { load(); }, [id, businessId, selectedBusiness?.id]);
 
   const invByBranch = useMemo(() => {
     const m = {};
@@ -71,6 +80,7 @@ export default function ProductDetail() {
         .from("products")
         .update({ is_active: !product.is_active })
         .eq("id", id)
+        .eq("business_id", businessId || selectedBusiness?.id)
         .select()
         .single();
       if (error) throw error;
@@ -81,15 +91,16 @@ export default function ProductDetail() {
     } finally { setToggling(false); }
   };
 
-  if (loading) return <div className="space-y-4"><PageHeader title="Mahsulot" backTo="/seller/products" /><LoadingState /></div>;
-  if (!product) return <div className="space-y-4"><PageHeader title="Mahsulot" backTo="/seller/products" /><EmptyState title="Mahsulot topilmadi" /></div>;
+  const productsPath = `/business/${businessId || selectedBusiness?.id}/products`;
+  if (loading) return <div className="space-y-4"><PageHeader title="Mahsulot" backTo={productsPath} /><LoadingState /></div>;
+  if (!product) return <div className="space-y-4"><PageHeader title="Mahsulot" backTo={productsPath} /><EmptyState title="Mahsulot topilmadi" /></div>;
 
   const assignedCount = inventory.length;
 
   return (
     <div className="animate-fade-in space-y-5">
-      <PageHeader title={product.name} backTo="/seller/products" action={
-        <GhostButton icon={Pencil} label="Tahrirlash" onClick={() => navigate(`/seller/products/${id}/edit`)} />
+      <PageHeader title={product.name} backTo={productsPath} action={
+        <GhostButton icon={Pencil} label="Tahrirlash" onClick={() => navigate(`${productsPath}/${id}/edit`)} />
       } />
 
       {!product.is_active && (
@@ -109,7 +120,7 @@ export default function ProductDetail() {
       </div>
 
       <div className="flex gap-2">
-        <SecondaryButton className="h-11 flex-1" onClick={() => navigate(`/seller/products/${id}/edit`)}><Pencil className="mr-1.5 h-4 w-4" />Tahrirlash</SecondaryButton>
+        <SecondaryButton className="h-11 flex-1" onClick={() => navigate(`${productsPath}/${id}/edit`)}><Pencil className="mr-1.5 h-4 w-4" />Tahrirlash</SecondaryButton>
         <SecondaryButton className="h-11 flex-1" disabled={toggling} onClick={toggleActive}><Archive className="mr-1.5 h-4 w-4" />{product.is_active ? "Arxivlash" : "Faollashtirish"}</SecondaryButton>
       </div>
 

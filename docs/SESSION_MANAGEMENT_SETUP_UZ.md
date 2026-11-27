@@ -1,21 +1,19 @@
-# QR orqali kirish va session boshqaruvi
+# Qurilma va session boshqaruvi
 
-Bu funksiya Supabase Auth rejimida ishlaydi (`VITE_AUTH_PROVIDER=supabase`). QR kod 90 soniyada tugaydi va serverda atomik tarzda bir marta ishlatiladi. QR ichida access yoki refresh token bo‘lmaydi.
+Session boshqaruvi Supabase Auth rejimida ishlaydi (`VITE_AUTH_PROVIDER=supabase`). Foydalanuvchilar o‘z hisobidagi faol qurilmalarni ko‘rishi va boshqa qurilmalardagi sessionlarni bekor qilishi mumkin.
 
 ## Deploy
 
 1. Supabase loyihasida yangi 32-byte (64 ta hex belgi) kalit yarating. Kalitni repoga yoki frontend `.env` fayliga qo‘shmang.
 2. Kalitni Supabase Edge Function secret sifatida `VIMI_SESSION_ENCRYPTION_KEY` nomi bilan saqlang. U qurilmalar refresh tokenlarini AES-GCM bilan shifrlash uchun ishlatiladi.
-3. `supabase db push` orqali `202610210001_qr_session_auth.sql` migrationini qo‘llang.
-4. `supabase functions deploy qr-session` orqali `qr-session` Edge Function'ni deploy qiling.
-5. Sayt HTTPS orqali ochilayotganini tekshiring. Kamera ruxsati xavfsiz origin talab qiladi.
+3. `supabase db push` orqali `202610210001_qr_session_auth.sql` migrationini va keyingi cleanup migrationlarini qo‘llang.
+4. `supabase functions deploy qr-session` orqali sessionlarni boshqaradigan Edge Function'ni deploy qiling.
 
 Edge Function'da Supabase tomonidan beriladigan `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` qiymatlari bo‘lishi kerak. Service-role kalitini hech qachon brauzerga yubormang.
 
 ## Ishlash tartibi
 
-- Profil sahifasida yaratilgan QR 90 soniya amal qiladi.
-- Login sahifasidagi “Skaner qilib kirish” kamera ekranini ochadi. QR skanerlanganda server challenge'ni faqat bir marta sarflaydi, so‘ng Supabase bir martalik magic-link tokeni yangi qurilmada session ochadi.
+- Session ma’lumotlari hisobga ulangan qurilmalarni ko‘rsatish uchun saqlanadi.
 - Mavjud sessionlarning refresh tokenlari faqat AES-GCM bilan shifrlangan ko‘rinishda saqlanadi. Session revoke qilishdan oldin token serverda yangilanadi va Supabase Admin API orqali aynan shu qurilma sessioni bekor qilinadi.
 - “Boshqalarini chiqarish” joriy qurilmani saqlab, qolgan sessionlarni bekor qiladi.
 

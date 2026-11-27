@@ -28,14 +28,25 @@ export async function listPublicBusinesses({ limit = 50, search = '' } = {}) {
   return data || [];
 }
 
-/** Businesses owned by the signed-in user. */
+/** Businesses owned by or assigned to the signed-in user as a manager. */
 export async function listMyBusinesses() {
   const client = requireSupabase();
   const userId = await currentUserId(client);
-  const { data, error } = await client.from('businesses')
-    .select('*').eq('created_by_id', userId).order('created_at', { ascending: false });
-  fail(error, 'Bizneslaringizni yuklab bo‘lmadi.');
-  return data || [];
+  const { data: memberships, error: membershipError } = await client.from('business_members')
+    .select('business_id').eq('user_id', userId);
+  fail(membershipError, 'Biznes a’zoliklaringizni yuklab bo‘lmadi.');
+  const businessIds = [...new Set((memberships || []).map((membership) => membership.business_id))];
+  const [ownedResult, managedResult] = await Promise.all([
+    client.from('businesses').select('*').eq('created_by_id', userId),
+    businessIds.length
+      ? client.from('businesses').select('*').in('id', businessIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  fail(ownedResult.error || managedResult.error, 'Bizneslaringizni yuklab bo‘lmadi.');
+  return [...new Map(
+    [...(ownedResult.data || []), ...(managedResult.data || [])]
+      .map((business) => [business.id, business])
+  ).values()].sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
 }
 
 export async function createBusiness(input) {
@@ -57,6 +68,44 @@ export async function createBusiness(input) {
   };
   const { data, error } = await client.from('businesses').insert(payload).select('*').single();
   fail(error, 'Biznes yaratilmadi. Store ID band bo‘lishi yoki ruxsat yetishmasligi mumkin.');
+  return data;
+}
+
+export async function createBusinessWithBranch({ business, branch }) {
+  const client = requireSupabase();
+  const { data: { user }, error: userError } = await client.auth.getUser();
+  if (userError || !user) throw new Error('Biznes yaratish uchun Supabase hisobiga kiring.');
+  if (!business?.name || !business?.category_id || !business?.store_id) {
+    throw new Error('Biznes nomi, kategoriya va Store ID majburiy.');
+  }
+  if (!branch?.country || !branch?.region || !branch?.city) {
+    throw new Error('Biznes joylashuvi uchun davlat, viloyat va shahar/tumanni tanlang.');
+  }
+
+  const { data, error } = await client.rpc('vimi_create_business_with_branch', {
+    p_name: String(business.name).trim(),
+    p_description: String(business.description || '').trim() || null,
+    p_logo_url: String(business.logo_url || '').trim() || null,
+    p_category_id: String(business.category_id),
+    p_store_id: String(business.store_id).trim().toUpperCase(),
+    p_phone: String(branch.phone || '').trim() || null,
+    p_working_hours: String(branch.working_hours || '').trim() || null,
+    p_geo_area_id: branch.geo_area_id || null,
+    p_country: String(branch.country).trim(),
+    p_region: String(branch.region).trim(),
+    p_city: String(branch.city).trim(),
+    p_district: String(branch.district || '').trim() || null,
+    p_address: String(branch.address || '').trim() || null,
+    p_latitude: branch.latitude == null ? null : Number(branch.latitude),
+    p_longitude: branch.longitude == null ? null : Number(branch.longitude),
+  });
+  if (error) {
+    console.error('Biznesni Supabase’da yaratib bo‘lmadi.', error);
+    throw new Error(error.message || 'Biznes yaratilmadi. Qayta urinib ko‘ring.');
+  }
+  if (!data?.business?.id || !data?.branch?.id) {
+    throw new Error('Biznes yaratilgani tasdiqlanmadi. Qayta yuklab, bizneslar ro‘yxatini tekshiring.');
+  }
   return data;
 }
 
@@ -106,6 +155,7 @@ export async function createBranch(input) {
   return data;
 }
 
+/** @param {{ businessId?: string, categoryId?: string, search?: string, includeInactive?: boolean, limit?: number }} options */
 export async function listProducts({ businessId, categoryId, search = '', includeInactive = false, limit = 100 } = {}) {
   const client = requireSupabase();
   let query = client.from('products').select('*').order('created_at', { ascending: false })
@@ -274,7 +324,10 @@ export async function upsertInventoryForBranch({ branchId, productId, stock, pri
 export async function listPublicCategories() {
   const client = requireSupabase();
   const { data, error } = await client.from('categories')
-    .select('id,name,icon').order('name', { ascending: true }).limit(100);
+    .select('id,name,icon,parent_id,sort_order')
+    .order('sort_order', { ascending: true })
+    .order('name', { ascending: true })
+    .limit(300);
   fail(error, 'Kategoriyalarni yuklab bo‘lmadi.');
   return data || [];
 }

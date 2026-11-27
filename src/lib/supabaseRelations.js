@@ -109,13 +109,22 @@ export async function getSellerOrder(orderId) {
   const { data: order, error } = await client.from('orders').select('*').eq('id', String(orderId)).maybeSingle();
   fail(error, 'Buyurtmani yuklab bo‘lmadi.');
   if (!order) return null;
-  const [{ data: items, error: itemsError }, { data: branch, error: branchError }] = await Promise.all([
+  const [{ data: items, error: itemsError }, { data: branch, error: branchError }, courierResult] = await Promise.all([
     client.from('order_items').select('*').eq('order_id', order.id).order('created_at', { ascending: true }),
     client.from('branches').select('*').eq('id', order.branch_id).maybeSingle(),
+    client.rpc('vimi_seller_get_order_courier', { p_order_id: String(order.id) }),
   ]);
   fail(itemsError, 'Buyurtma mahsulotlarini yuklab bo‘lmadi.');
   fail(branchError, 'Filial ma’lumotlarini yuklab bo‘lmadi.');
-  return { order: { ...order, created_date: order.created_at }, items: items || [], branch };
+  if (courierResult.error && courierResult.error.code !== 'PGRST202') {
+    fail(courierResult.error, 'Kuryer ma’lumotlarini yuklab bo‘lmadi.');
+  }
+  return {
+    order: { ...order, created_date: order.created_at },
+    items: items || [],
+    branch,
+    courier: courierResult.data || null,
+  };
 }
 
 export async function listUnreadNotifications() {

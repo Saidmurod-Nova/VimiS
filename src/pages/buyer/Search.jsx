@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search as SearchIcon, X, Store as StoreIcon, Package } from "lucide-react";
+import { Search as SearchIcon, X } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import SearchStoreCard from "@/components/vimi/SearchStoreCard";
 import SearchProductCard from "@/components/vimi/SearchProductCard";
@@ -25,8 +25,10 @@ export default function Search() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const debounceRef = useRef(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
+    let active = true;
     const q = query.trim();
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!q) { setData({ businesses: [], products: [] }); setLoading(false); setError(""); return; }
@@ -35,19 +37,22 @@ export default function Search() {
       try {
         if (isSupabaseMode) {
           const result = await searchPublicCatalog(q);
-          setData(result || { businesses: [], products: [] });
+          if (active) setData(result || { businesses: [], products: [] });
         } else {
           const res = await base44.functions.invoke("searchCatalog", { q });
-          setData(res.data || { businesses: [], products: [] });
+          if (active) setData(res.data || { businesses: [], products: [] });
         }
       } catch (err) {
-        setError(err?.response?.data?.error || "Qidiruvda xatolik");
+        if (active) setError(err?.response?.data?.error || "Qidiruvda xatolik");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }, 350);
-    return () => debounceRef.current && clearTimeout(debounceRef.current);
-  }, [query]);
+    return () => {
+      active = false;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query, retryKey]);
 
   const counts = useMemo(() => ({ all: data.businesses.length + data.products.length, stores: data.businesses.length, products: data.products.length }), [data]);
   const showStores = filter === "all" || filter === "stores";
@@ -56,7 +61,7 @@ export default function Search() {
   const hasQuery = !!query.trim();
 
   return (
-    <div className="animate-fade-in space-y-4">
+    <div className="workspace-page animate-fade-in space-y-4">
       <PageHeader title="Qidirish" backTo="/" />
 
       <div className="relative">
@@ -96,7 +101,7 @@ export default function Search() {
       {!hasQuery ? (
         <EmptyState icon={SearchIcon} title="Qidirishni boshlang" description="Do'kon nomi, ID yoki mahsulot nomini kiriting." />
       ) : error ? (
-        <ErrorState title={error} onRetry={() => setQuery((q) => q)} />
+        <ErrorState title={error} onRetry={() => setRetryKey((key) => key + 1)} />
       ) : loading ? (
         <div className="space-y-3">
           <div className="h-16 rounded-2xl bg-secondary animate-pulse" />
@@ -118,7 +123,7 @@ export default function Search() {
           {showProducts && data.products.length > 0 && (
             <section className="space-y-2">
               {filter === "all" && <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Mahsulotlar</h2>}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {data.products.map((p) => (
                   <SearchProductCard key={p.product_id} product={p} onView={() => navigate(`/product/${p.product_id}`)} />
                 ))}

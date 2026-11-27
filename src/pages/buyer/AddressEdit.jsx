@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { MapPin, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { MapPin, Loader2, ChevronDown, ChevronUp, Home, MapPinned, Star } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import { TextInput } from "@/components/vimi/VimiInput";
 import { PrimaryButton } from "@/components/vimi/VimiButton";
@@ -75,7 +75,7 @@ export default function AddressEdit() {
         state: returnTo === "/checkout" ? { selectedAddressId: saved?.id } : undefined
       });
     } catch (err) {
-      toast({ title: err?.response?.data?.error || "Saqlanmadi", variant: "destructive" });
+      toast({ title: err?.response?.data?.error || err?.message || "Manzil saqlanmadi", variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -89,27 +89,92 @@ export default function AddressEdit() {
   );
 
   return (
-    <div className="animate-fade-in space-y-5">
+    <div className="mx-auto w-full max-w-3xl animate-fade-in space-y-5">
       <PageHeader title={id ? "Manzilni tahrirlash" : "Yangi manzil"} backTo={returnTo} />
       <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <Label>Sarlavha</Label>
-          <TextInput placeholder="Uy, Ish..." value={title} onChange={(e) => setTitle(e.target.value)} maxLength={50} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Manzil</Label>
-          <Textarea placeholder="Viloyat, shahar, ko'cha, uy..." value={address} onChange={(e) => setAddress(e.target.value)} className="min-h-[90px] rounded-xl bg-secondary/70" />
-        </div>
-        <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-3">
-          <span className="text-sm font-medium">Asosiy manzil qilish</span>
-          <Switch checked={isDefault} onCheckedChange={setIsDefault} />
-        </div>
-        <button type="button" onClick={() => setShowMap((s) => !s)} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
-          <MapPin className="h-4 w-4" />{showMap ? "Xaritani yashirish" : "Xaritadan tanlash (ixtiyoriy)"}
-          {showMap ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </button>
-        {showMap && <MapPicker value={coords} onChange={setCoords} />}
-        {coords && <p className="text-xs text-muted-foreground">Tanlangan: {Number(coords.lat).toFixed(4)}, {Number(coords.lng).toFixed(4)}</p>}
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+          <div className="mb-4 flex items-start gap-3">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Home className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div>
+              <h2 className="font-display font-semibold">Manzil ma’lumotlari</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Yetkazib berishda tanib olishingiz uchun nom va to‘liq manzilni kiriting.</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="address-title">Manzil nomi</Label>
+              <TextInput
+                id="address-title"
+                icon={Home}
+                placeholder="Masalan: Uy, Ish yoki Ota-onam"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={50}
+                autoComplete="address-line1"
+                required
+              />
+              <p className="text-right text-xs text-muted-foreground">{title.length}/50</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="delivery-address">To‘liq manzil</Label>
+              <Textarea
+                id="delivery-address"
+                placeholder="Viloyat, shahar yoki tuman, ko‘cha, uy va xonadon"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="min-h-24 rounded-xl bg-background"
+                maxLength={500}
+                autoComplete="street-address"
+                required
+              />
+              <p className="text-xs text-muted-foreground">Kuryer manzilni aniq topishi uchun mo‘ljalni ham yozishingiz mumkin.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <MapPinned className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-display font-semibold">Xaritadagi nuqta</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Ixtiyoriy. Nuqta kuryerga manzilni aniqroq topishga yordam beradi.</p>
+              {coords && (
+                <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
+                  <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+                  Nuqta tanlangan
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowMap((shown) => !shown)}
+              aria-expanded={showMap}
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-border bg-secondary/60 px-3 text-sm font-medium transition hover:bg-secondary"
+            >
+              {showMap ? "Yopish" : coords ? "O‘zgartirish" : "Xaritadan tanlash"}
+              {showMap ? <ChevronUp className="h-4 w-4" aria-hidden="true" /> : <ChevronDown className="h-4 w-4" aria-hidden="true" />}
+            </button>
+          </div>
+          {showMap && <div className="mt-4 border-t border-border pt-4"><MapPicker value={coords} onChange={setCoords} /></div>}
+        </section>
+
+        <section className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+          <span className="flex items-center gap-3">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground">
+              <Star className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold">Asosiy manzil</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">Buyurtmada avtomatik tanlanadi</span>
+            </span>
+          </span>
+          <Switch checked={isDefault} onCheckedChange={setIsDefault} aria-label="Asosiy manzil qilib belgilash" />
+        </section>
+
         <PrimaryButton type="submit" disabled={saving} className="h-12 w-full gap-2">
           {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saqlanmoqda...</> : "Saqlash"}
         </PrimaryButton>

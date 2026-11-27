@@ -1,19 +1,19 @@
 import React from "react";
 import { Store, Check, Plus, ChevronDown } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Image } from "@/components/ui/image";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { PrimaryButton } from "../VimiButton";
 
-// Switches the active business for the seller console. Only owned businesses
-// are listed (BusinessContext already filters by created_by_id). Selecting one
-// refreshes every dashboard metric via the parent's effect.
-export default function BusinessSelectorSheet({ businesses, selectedBusiness, onSelect, triggerClassName }) {
+// Switches the active business for the console; the provider exposes only
+// businesses owned by or assigned to the signed-in user.
+export default function BusinessSelectorSheet({ businesses, selectedBusiness, onSelect, triggerClassName, triggerContent, loading = false, title = "Biznesni tanlash" }) {
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();
+  const businessList = businesses || [];
 
-  const trigger = (
+  const defaultTrigger = (
     <button
       type="button"
       aria-label={`Biznesni tanlash: ${selectedBusiness?.name || "Biznes tanlang"}`}
@@ -36,13 +36,18 @@ export default function BusinessSelectorSheet({ businesses, selectedBusiness, on
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>{trigger}</SheetTrigger>
+      <SheetTrigger asChild>{triggerContent || defaultTrigger}</SheetTrigger>
       <SheetContent side="right" className="w-full p-0 sm:max-w-sm">
         <SheetHeader className="px-5 pt-6 pb-2 text-left">
-          <SheetTitle>Biznesni tanlash</SheetTitle>
+          <SheetTitle>{title}</SheetTitle>
+          <SheetDescription className="sr-only">Biznesingizni tanlang yoki yangi biznes yarating.</SheetDescription>
         </SheetHeader>
         <div className="space-y-2 px-4 pb-6 pt-2">
-          {(businesses || []).map((b) => {
+          {loading ? (
+            <p role="status" className="px-3 py-6 text-center text-sm text-muted-foreground">Bizneslar yuklanmoqda...</p>
+          ) : businessList.length === 0 ? (
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground">Hali biznes ochilmagan.</p>
+          ) : businessList.map((b) => {
             const active = selectedBusiness?.id === b.id;
             return (
               <button
@@ -69,7 +74,7 @@ export default function BusinessSelectorSheet({ businesses, selectedBusiness, on
               </button>
             );
           })}
-          <PrimaryButton className="mt-2 h-12 w-full" onClick={() => { setOpen(false); navigate("/seller/businesses/new"); }}>
+          <PrimaryButton className="mt-2 h-12 w-full" onClick={() => { setOpen(false); navigate("/business/new"); }}>
             <Plus className="mr-1 h-4 w-4" />Yangi biznes
           </PrimaryButton>
         </div>

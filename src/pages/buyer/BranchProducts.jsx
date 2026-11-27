@@ -46,7 +46,7 @@ export default function BranchProducts() {
   const { branch, business } = data;
 
   return (
-    <div className="animate-fade-in space-y-5">
+    <div className="workspace-page animate-fade-in space-y-5">
       <PageHeader title={branch.name} backTo={`/branch/${branchId}`} />
       <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
         <span className="text-sm text-muted-foreground">{business.name}</span>
@@ -67,7 +67,7 @@ export default function BranchProducts() {
       {items.length === 0 ? (
         <EmptyState icon={Package} title="Hozircha mahsulotlar yo'q" description="Bu filialda hozircha mahsulot mavjud emas." />
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {items.map((item) => (
             <ProductCard
               key={item.product_id}

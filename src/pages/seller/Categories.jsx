@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useBusiness } from "@/lib/BusinessContext";
 import { isSupabaseMode } from "@/lib/supabase";
@@ -9,7 +9,7 @@ import { Plus, Pencil, Trash2, Tag, Loader2, Check } from "lucide-react";
 import PageHeader from "@/components/vimi/PageHeader";
 import { PrimaryButton, IconButton } from "@/components/vimi/VimiButton";
 import { TextInput } from "@/components/vimi/VimiInput";
-import { LoadingState, EmptyState } from "@/components/vimi/States";
+import { LoadingState, EmptyState, ErrorState } from "@/components/vimi/States";
 
 export default function Categories() {
   const { selectedBusiness: biz, loading: bizLoading } = useBusiness();
@@ -22,22 +22,34 @@ export default function Categories() {
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
   const [savingId, setSavingId] = useState(null);
+  const [error, setError] = useState("");
+  const productsPath = biz ? `/business/${biz.id}/products` : "/business";
 
-  const load = () => {
-    if (!biz) { setCategories([]); setProducts([]); setLoading(false); return; }
+  const load = useCallback(async () => {
+    if (!biz?.id) { setCategories([]); setProducts([]); setLoading(false); return; }
     setLoading(true);
-    Promise.all(isSupabaseMode ? [
-      listProductCategories(biz.id),
-      listProducts({ businessId: biz.id, includeInactive: true, limit: 200 })
-    ] : [
-      base44.entities.ProductCategory.filter({ business_id: biz.id }, "name"),
-      base44.entities.Product.filter({ business_id: biz.id }, "-created_date", 200)
-    ]).then(([c, p]) => { setCategories(c || []); setProducts(p || []); })
-      .catch(() => { setCategories([]); setProducts([]); })
-      .finally(() => setLoading(false));
-  };
+    setError("");
+    try {
+      const [c, p] = await Promise.all(isSupabaseMode ? [
+        listProductCategories(biz.id),
+        listProducts({ businessId: biz.id, includeInactive: true, limit: 200 })
+      ] : [
+        base44.entities.ProductCategory.filter({ business_id: biz.id }, "name"),
+        base44.entities.Product.filter({ business_id: biz.id }, "-created_date", 200)
+      ]);
+      setCategories(c || []);
+      setProducts(p || []);
+    } catch (loadError) {
+      console.error("Mahsulot kategoriyalarini yuklab bo‘lmadi.", loadError);
+      setError(loadError?.message || "Mahsulot kategoriyalarini yuklab bo‘lmadi.");
+      setCategories([]);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [biz?.id]);
 
-  useEffect(() => { load(); }, [biz?.id]);
+  useEffect(() => { load(); }, [load]);
 
   const countByCategory = (catId) => products.filter((p) => p.category_id === catId).length;
 
@@ -88,18 +100,19 @@ export default function Categories() {
     }
   };
 
-  if (bizLoading || loading) return <div className="space-y-4"><PageHeader title="Kategoriyalar" backTo="/seller/products" /><LoadingState /></div>;
-  if (!biz) return <div className="space-y-4"><PageHeader title="Kategoriyalar" backTo="/seller/products" /><EmptyState title="Avval biznes tanlang" /></div>;
+  if (bizLoading || loading) return <div className="workspace-page space-y-4"><PageHeader title="Kategoriyalar" backTo={productsPath} /><LoadingState /></div>;
+  if (!biz) return <div className="workspace-page space-y-4"><PageHeader title="Kategoriyalar" backTo={productsPath} /><EmptyState title="Avval biznes tanlang" /></div>;
 
   return (
-    <div className="animate-fade-in space-y-5">
-      <PageHeader title="Kategoriyalar" backTo="/seller/products" />
-      <form onSubmit={create} className="flex items-center gap-2">
+    <div className="workspace-page animate-fade-in space-y-5">
+      <PageHeader title="Kategoriyalar" subtitle="Mahsulotlaringizni biznes kategoriyalari bo‘yicha tartiblang." backTo={productsPath} />
+      {error ? <ErrorState title={error} onRetry={load} /> : null}
+      <form onSubmit={create} className="surface-card flex items-center gap-2 p-3">
         <TextInput value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Yangi kategoriya nomi" maxLength={60} required />
         <PrimaryButton type="submit" aria-label="Kategoriya qo‘shish" className="h-12 px-4" disabled={creating}>{creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}</PrimaryButton>
       </form>
 
-      {categories.length === 0 ? (
+      {!error && categories.length === 0 ? (
         <EmptyState icon={Tag} title="Hozircha kategoriyalar yo'q" description="Mahsulotlarni guruhlash uchun kategoriya qo'shing." />
       ) : (
         <div className="space-y-2">
@@ -107,7 +120,7 @@ export default function Categories() {
             const count = countByCategory(c.id);
             const editing = editingId === c.id;
             return (
-              <div key={c.id} className="flex items-center gap-2 rounded-2xl border border-border bg-card p-3">
+              <div key={c.id} className="flex items-center gap-2 border-b border-border bg-card px-4 py-3 last:border-b-0">
                 {editing ? (
                   <>
                     <TextInput value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={c.name} className="flex-1" autoFocus />

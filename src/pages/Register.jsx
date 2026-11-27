@@ -193,7 +193,6 @@ export default function Register() {
           <TextInput
             id="fullName"
             autoComplete="name"
-            autoFocus
             placeholder="Ism Familiya"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}

@@ -4,11 +4,11 @@ import { Plus, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Price from "./Price";
 
-export default function ProductCard({ name, price, image, onAdd, onClick, availability, className }) {
+export default function ProductCard({ name, price, image = null, onAdd = null, onClick, availability = null, className = "" }) {
   return (
-    <div className={cn("group relative overflow-hidden rounded-2xl border border-border bg-card", className)}>
+    <div className={cn("group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md", className)}>
       <button type="button" onClick={onClick} className="block w-full text-left">
-        <div className="aspect-square overflow-hidden bg-gradient-to-br from-secondary to-muted">
+        <div className="aspect-[4/3] overflow-hidden bg-secondary">
           {image ? (
             <Image src={image} alt={name} fittingType="fill" className="h-full w-full transition duration-300 group-hover:scale-105" />
           ) : (
@@ -17,7 +17,7 @@ export default function ProductCard({ name, price, image, onAdd, onClick, availa
             </div>
           )}
         </div>
-        <div className="p-3">
+        <div className="p-3.5">
           <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-medium text-foreground">{name}</h3>
           <Price value={price} size="sm" className="mt-2" />
           {availability && <div className="mt-1">{availability}</div>}

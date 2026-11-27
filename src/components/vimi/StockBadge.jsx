@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { formatSoM, isLowStock } from "@/lib/inventory";
 
 // Compact stock display with restrained low-stock emphasis.
-export default function StockBadge({ stock = 0, className }) {
+export default function StockBadge({ stock = 0, className = "" }) {
   const low = isLowStock(stock);
   const out = stock === 0;
   return (

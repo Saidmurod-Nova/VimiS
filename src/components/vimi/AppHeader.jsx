@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronRight, LogOut, Moon, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw, Search, ShoppingCart, Sun, User } from "lucide-react";
+import { ChevronRight, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw, Search, Settings, ShoppingCart, Store, Sun, User } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { useCart } from "@/lib/CartContext";
@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar }) {
+export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar, onToggleMobileNav, isMobileNavOpen, showBusinessSelector = true }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
@@ -31,7 +31,6 @@ export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar }) 
   const {
     businesses,
     selectedBusiness,
-    selectBusiness,
     selectedBranchId,
     selectBranch,
   } = useBusiness();
@@ -41,9 +40,10 @@ export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar }) 
   const [branchesError, setBranchesError] = useState(false);
   const [branchesRetry, setBranchesRetry] = useState(0);
   const searchValue = searchParams.get("q") || "";
-  const profilePath = isSeller ? "/seller/profile" : "/profile";
-  const ordersPath = isSeller ? "/seller/orders" : "/orders";
-  const homePath = isSeller ? "/seller" : "/";
+  const businessBase = selectedBusiness?.id ? `/business/${selectedBusiness.id}` : "/business";
+  const profilePath = isSeller ? `${businessBase}/settings` : "/profile";
+  const ordersPath = isSeller ? `${businessBase}/orders` : "/orders";
+  const homePath = isSeller ? businessBase : "/";
   const displayName = user?.full_name || user?.email || "Profil";
 
   useEffect(() => {
@@ -106,19 +106,21 @@ export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar }) 
   };
 
   const handleBusinessSelect = (id) => {
-    selectBusiness(id);
-    if (id !== selectedBusiness?.id) navigate("/seller");
-  };
-
-  const addBranch = () => {
-    if (selectedBusiness?.id) {
-      navigate(`/seller/businesses/${selectedBusiness.id}/branches/new`);
-    }
+    if (id !== selectedBusiness?.id) navigate(`/business/${id}`);
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto flex min-h-16 max-w-3xl flex-wrap items-center gap-2 px-4 py-2 sm:gap-3 sm:px-6 sm:py-0">
+    <header className={`sticky top-2 z-30 mx-2 mt-2 border shadow-lg shadow-black/5 sm:top-3 sm:mx-3 sm:mt-3 ${isSeller ? "rounded-[1.25rem] business-glass-nav sm:rounded-[1.75rem] lg:rounded-full" : "rounded-full border-border/70 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/80"}`}>
+      <div className="mx-auto flex min-h-[64px] w-full max-w-[1600px] flex-wrap items-center gap-2 px-3 py-2 sm:min-h-[72px] sm:flex-nowrap sm:gap-3 sm:px-5 sm:py-0 lg:px-8">
+        <button
+          type="button"
+          onClick={onToggleMobileNav}
+          aria-label={isMobileNavOpen ? "Navigatsiyani yopish" : "Navigatsiyani ochish"}
+          aria-expanded={isMobileNavOpen}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-foreground transition hover:bg-secondary lg:hidden"
+        >
+          <Menu className="h-4 w-4" aria-hidden="true" />
+        </button>
         <button
           type="button"
           onClick={onToggleSidebar}
@@ -130,7 +132,7 @@ export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar }) 
             ? <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
             : <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />}
         </button>
-        <Link to={homePath} aria-label="VimiS bosh sahifasi" className="shrink-0">
+        <Link to={homePath} aria-label="VireonSpes platformasi bosh sahifasi" className="shrink-0">
           <VimiLogo />
         </Link>
         {!isSeller && (
@@ -158,20 +160,25 @@ export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar }) 
         )}
 
         {isSeller && (
-          <nav aria-label="Biznes va filial" className="order-last flex min-w-0 basis-full items-center gap-1 sm:order-none sm:basis-auto sm:flex-1 sm:gap-2">
-            <BusinessSelectorSheet
-              businesses={businesses}
-              selectedBusiness={selectedBusiness}
-              onSelect={handleBusinessSelect}
-              triggerClassName="max-w-[36vw] flex-1 sm:max-w-[220px]"
-            />
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <nav aria-label="Biznes va filial" className="order-3 flex w-full min-w-0 basis-full items-center gap-2 border-t border-border/60 pt-2 sm:order-none sm:w-auto sm:basis-auto sm:flex-1 sm:border-t-0 sm:pt-0">
+            {showBusinessSelector && (
+              <>
+                <BusinessSelectorSheet
+                  businesses={businesses}
+                  selectedBusiness={selectedBusiness}
+                  onSelect={handleBusinessSelect}
+                  triggerClassName="h-10 max-w-none min-w-0 flex-[1.15] sm:max-w-[220px] sm:flex-1"
+                />
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              </>
+            )}
             <BranchSelectorSheet
               branches={branches}
               selectedId={selectedBranchId}
               onSelect={selectBranch}
+              onAddBranch={() => navigate(`${businessBase}/branches/new`)}
               disabled={!selectedBusiness || branchesLoading}
-              triggerClassName="max-w-[32vw] flex-1 sm:max-w-[180px]"
+              triggerClassName="h-10 max-w-none min-w-0 flex-1 sm:max-w-[180px]"
             />
             {branchesError && (
               <button
@@ -184,17 +191,6 @@ export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar }) 
                 <RefreshCw className="h-4 w-4" aria-hidden="true" />
               </button>
             )}
-            <button
-              type="button"
-              onClick={addBranch}
-              disabled={!selectedBusiness}
-              aria-label="Filial qo‘shish"
-              title="Filial qo‘shish"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-3"
-            >
-              <Plus className="h-4 w-4 sm:mr-1" aria-hidden="true" />
-              <span className="hidden text-sm font-medium sm:inline">Filial</span>
-            </button>
           </nav>
         )}
 
@@ -244,10 +240,43 @@ export default function AppHeader({ isSeller, isSidebarOpen, onToggleSidebar }) 
                   Buyurtmalar
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => navigate(isSeller ? "/" : "/seller")}>
-                <RefreshCw aria-hidden="true" />
-                {isSeller ? "Xaridorga o‘tish" : "Sotuvchiga o‘tish"}
-              </DropdownMenuItem>
+              {!isSeller && (
+                <DropdownMenuItem asChild>
+                  <Link to="/settings">
+                    <Settings aria-hidden="true" />
+                    Sozlamalar
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              {!isSeller && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/business">
+                      <Store aria-hidden="true" />
+                      Bizneslarim
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/business/new">
+                      <Plus aria-hidden="true" />
+                      Biznes yaratish
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
+              {businesses.length > 0 && !isSeller && (
+                <DropdownMenuItem asChild>
+                  <Link to="/business">
+                    <Store aria-hidden="true" />Business Console’ga o‘tish
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              {isSeller && (
+                <DropdownMenuItem onSelect={() => navigate("/")}>
+                  <Store aria-hidden="true" />Marketplace’ga o‘tish
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={toggleTheme}>
                 {theme === "dark"

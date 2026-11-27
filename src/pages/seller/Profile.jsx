@@ -11,8 +11,12 @@ export default function Profile() {
   const { selectedBusiness } = useBusiness();
   const navigate = useNavigate();
   const openBusiness = (tab) => {
-    if (!selectedBusiness) { navigate("/seller"); return; }
-    navigate(`/seller/businesses/${selectedBusiness.id}${tab ? `?tab=${tab}` : ""}`);
+    if (!selectedBusiness) { navigate("/business"); return; }
+    if (tab === "telegram") {
+      navigate(`/business/${selectedBusiness.id}/telegram`);
+      return;
+    }
+    navigate(`/business/${selectedBusiness.id}/settings${tab === "branches" ? "?tab=branches" : ""}`);
   };
 
   return (
@@ -28,12 +32,12 @@ export default function Profile() {
       </div>
 
       <SettingsList>
-        <SettingsRow icon={Store} label="Bizneslarim" onClick={() => navigate("/seller")} />
-        <SettingsRow icon={Briefcase} label="Filiallar" onClick={() => openBusiness()} />
+        <SettingsRow icon={Store} label="Bizneslarim" onClick={() => navigate("/business")} />
+        <SettingsRow icon={Briefcase} label="Filiallar" onClick={() => openBusiness("branches")} />
         <SettingsRow icon={MapPinned} label="Joylashuvlar" onClick={() => navigate("/locations", { state: { from: "/seller/profile" } })} />
         <SettingsRow icon={Settings} label="Biznes sozlamalari" onClick={() => openBusiness("settings")} />
-        <SettingsRow icon={MessageCircle} label="Telegram botlari" onClick={() => navigate("/seller/profile/telegram")} />
-        <SettingsRow icon={Bell} label="Bildirishnomalar" onClick={() => {}} />
+        <SettingsRow icon={MessageCircle} label="Telegram botlari" onClick={() => openBusiness("telegram")} />
+        <SettingsRow icon={Bell} label="Bildirishnomalar (tez orada)" />
       </SettingsList>
 
       <SettingsList>

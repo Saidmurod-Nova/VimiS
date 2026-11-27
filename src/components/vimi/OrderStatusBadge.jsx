@@ -15,7 +15,7 @@ export function statusLabel(status) {
   return (STATUS[status] && STATUS[status].label) || status || "—";
 }
 
-export default function OrderStatusBadge({ status, className }) {
+export default function OrderStatusBadge({ status, className = "" }) {
   const s = STATUS[status] || { label: status || "—", cls: "bg-secondary text-muted-foreground" };
   return (
     <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", s.cls, className)}>

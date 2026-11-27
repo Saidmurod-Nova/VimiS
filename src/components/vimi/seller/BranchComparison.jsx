@@ -41,7 +41,7 @@ export default function BranchComparison({ branches, businessId }) {
               <td className="px-2 py-3 text-right">
                 <button
                   type="button"
-                  onClick={() => navigate(`/seller/businesses/${businessId}/branches/${b.branchId}`)}
+                  onClick={() => navigate(`/business/${businessId}/branches/${b.branchId}`)}
                   className="inline-flex items-center text-primary"
                 >
                   <ChevronRight className="h-4 w-4" aria-hidden="true" />

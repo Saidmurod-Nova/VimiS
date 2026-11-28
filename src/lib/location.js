@@ -10,10 +10,109 @@ export function haversineKm(a, b) {
   return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
 }
 
-// Automatic location detection without reverse geocoding: finds the nearest
-// active branch to the given coordinates and derives the location from it.
-// Returns null when no branches with coordinates are available.
+const regionAliases = {
+  "xorazm": "Xorazm viloyati",
+  "khorezm": "Xorazm viloyati",
+  "xorezm": "Xorazm viloyati",
+  "toshkent": "Toshkent viloyati",
+  "samarqand": "Samarqand viloyati",
+  "andijon": "Andijon viloyati",
+  "buxoro": "Buxoro viloyati",
+  "fargona": "Farg'ona viloyati",
+  "fergana": "Farg'ona viloyati",
+  "namangan": "Namangan viloyati",
+  "qashqadaryo": "Qashqadaryo viloyati",
+  "surxondaryo": "Surxondaryo viloyati",
+  "sirdaryo": "Sirdaryo viloyati",
+  "jizzax": "Jizzax viloyati",
+  "navoiy": "Navoiy viloyati",
+};
+
+function normalizeName(value) {
+  return String(value || "")
+    .toLocaleLowerCase("uz")
+    .replace(/[ʻ'’]/g, "")
+    .replace(/[^a-z\u0400-\u04ff\u0080-\u024f]+/gi, "")
+    .replace(/\s+/g, "");
+}
+
+async function loadGeoAreas(filters) {
+  if (isSupabaseMode) {
+    let query = requireSupabase().from("geo_areas").select("*");
+    for (const [field, value] of Object.entries(filters)) query = query.eq(field, value);
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }
+  return base44.entities.GeoArea.filter(filters, "name", 100);
+}
+
+async function reverseGeocode(coords) {
+  const params = new URLSearchParams({
+    latitude: String(coords.lat),
+    longitude: String(coords.lng),
+    localityLanguage: "uz",
+  });
+  const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?${params.toString()}`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) throw new Error(`Location API javob bermadi: ${response.status}`);
+  return response.json();
+}
+
+async function findGeoArea(countryName, regionName, cityName) {
+  const countries = await loadGeoAreas({ type: "country" });
+  const country = countries.find((item) => normalizeName(item.name) === normalizeName(countryName)) || countries[0];
+  if (!country) return null;
+
+  const regions = await loadGeoAreas({ parent_id: country.id });
+  const regionKey = normalizeName(regionName);
+  const aliasEntry = Object.entries(regionAliases).find(([alias]) => regionKey.includes(normalizeName(alias)));
+  const aliasedRegionName = aliasEntry?.[1];
+  const region = regions.find((item) => {
+    const name = normalizeName(item.name);
+    return name === regionKey
+      || (aliasedRegionName && normalizeName(item.name) === normalizeName(aliasedRegionName))
+      || normalizeName(regionName).includes(name)
+      || name.includes(normalizeName(regionName));
+  });
+  if (!region) return { country: country.name, region: "", city: "", geo_area_id: country.id };
+
+  const cities = await loadGeoAreas({ parent_id: region.id });
+  const city = cities.find((item) => {
+    const name = normalizeName(item.name);
+    const value = normalizeName(cityName);
+    return name === value || value.includes(name) || name.includes(value);
+  });
+  return {
+    country: country.name,
+    region: region.name,
+    city: city?.name || "",
+    geo_area_id: city?.id || region.id,
+  };
+}
+
+// Reverse geocodes the coordinates through BigDataCloud, then maps the result
+// to the application's geo area hierarchy. Falls back to the nearest active
+// branch when the API or geo area match is unavailable.
 export async function detectNearestLocation(coords) {
+  try {
+    const geocoded = await reverseGeocode(coords);
+    const regionName = geocoded.principalSubdivision
+      || geocoded.principalSubdivisionName
+      || geocoded.region
+      || "";
+    const cityName = geocoded.locality
+      || geocoded.city
+      || geocoded.localityInfo?.administrative?.[0]?.name
+      || "";
+    const countryName = geocoded.countryName || geocoded.countryCode || "O'zbekiston";
+    const area = await findGeoArea(countryName, regionName, cityName);
+    if (area?.region) return { ...area, district: area.city };
+  } catch (error) {
+    console.error("Joylashuv API xatosi.", error);
+  }
+
   let branches;
   if (isSupabaseMode) {
     const { data, error } = await requireSupabase().from("branches").select("*").eq("is_active", true).limit(200);

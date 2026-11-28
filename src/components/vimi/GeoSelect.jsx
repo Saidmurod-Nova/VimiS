@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 
 const fallbackCitiesByRegion = {
   "Xorazm viloyati": [
-    { id: "fallback-xonqa", name: "Xonqa", type: "city" },
+    { id: "6c2928b72b2d11f0a1b2c3d4", name: "Xonqa", type: "city" },
   ],
 };
 
@@ -98,9 +98,8 @@ export default function GeoSelect({ onChange, initialLocation }) {
     const co = cos.find((x) => x.id === cId);
     const ro = rs.find((x) => x.id === rId);
     const ci = cis.find((x) => x.id === ciId);
-    const fallbackAreaId = ci?.id?.startsWith("fallback-") ? null : ci?.id;
     onChange && onChange({
-      geo_area_id: fallbackAreaId || ro?.id || co?.id || null,
+      geo_area_id: ci?.id || ro?.id || co?.id || null,
       country: co?.name || "",
       region: ro?.name || "",
       city: ci?.name || "",

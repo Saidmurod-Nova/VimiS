@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { LocateFixed, Loader2 } from "lucide-react";
 import BottomSheet from "./BottomSheet";
 import GeoSelect from "./GeoSelect";
@@ -7,11 +7,12 @@ import { useBuyer } from "@/lib/BuyerContext";
 import { getCurrentPosition, detectNearestLocation } from "@/lib/location";
 import { useToast } from "@/components/ui/use-toast";
 
-// Location selector: manual geo hierarchy + optional automatic detection via
-// nearest branch. GPS is requested only when the user taps the detect button.
+// Location selector: auto-detects on first open when no location is saved,
+// with manual selection and an explicit retry available.
 export default function LocationSheet({ open, onOpenChange }) {
   const { selectedLocation, setLocation } = useBuyer();
   const { toast } = useToast();
+  const autoDetectAttempted = useRef(false);
   const [detecting, setDetecting] = useState(false);
   const [detectError, setDetectError] = useState("");
   const [detectedLocation, setDetectedLocation] = useState(null);
@@ -20,7 +21,7 @@ export default function LocationSheet({ open, onOpenChange }) {
     if (!open) setDetectedLocation(null);
   }, [open]);
 
-  const handleDetect = async () => {
+  const handleDetect = useCallback(async () => {
     setDetecting(true);
     setDetectError("");
     setDetectedLocation(null);
@@ -39,7 +40,13 @@ export default function LocationSheet({ open, onOpenChange }) {
     } finally {
       setDetecting(false);
     }
-  };
+  }, [setLocation, toast]);
+
+  useEffect(() => {
+    if (!open || autoDetectAttempted.current) return;
+    autoDetectAttempted.current = true;
+    if (!selectedLocation) handleDetect();
+  }, [open, selectedLocation, handleDetect]);
 
   return (
     <BottomSheet open={open} onOpenChange={onOpenChange} title="Joylashuvni tanlang">

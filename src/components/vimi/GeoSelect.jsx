@@ -4,6 +4,31 @@ import { isSupabaseMode, requireSupabase } from "@/lib/supabase";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
+const fallbackCitiesByRegion = {
+  "Xorazm viloyati": [
+    { id: "fallback-xonqa", name: "Xonqa", type: "city" },
+  ],
+};
+
+function normalizeAreaName(value) {
+  return String(value || "")
+    .trim()
+    .toLocaleLowerCase("uz")
+    .replace(/[‘’']/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function mergeFallbackCities(regionName, cities) {
+  const fallbackCities = fallbackCitiesByRegion[regionName] || [];
+  const existingNames = new Set((cities || []).map((item) => normalizeAreaName(item.name)));
+  return [
+    ...(cities || []),
+    ...fallbackCities
+      .filter((item) => !existingNames.has(normalizeAreaName(item.name)))
+      .map((item) => ({ ...item, parent_id: null })),
+  ];
+}
+
 export default function GeoSelect({ onChange, initialLocation }) {
   const id = useId();
   const [countries, setCountries] = useState([]);
@@ -49,9 +74,10 @@ export default function GeoSelect({ onChange, initialLocation }) {
           if (selectedRegion) {
             const cis = await loadAreas({ parent_id: selectedRegion.id });
             if (!active) return;
-            setCities(cis || []);
+            const mergedCities = mergeFallbackCities(selectedRegion.name, cis || []);
+            setCities(mergedCities);
             const cityName = initialLocation?.city?.trim().toLocaleLowerCase();
-            const selectedCity = cis?.find((item) => item.name.trim().toLocaleLowerCase() === cityName);
+            const selectedCity = mergedCities.find((item) => normalizeAreaName(item.name) === normalizeAreaName(cityName));
             setCity(selectedCity?.id || null);
           } else {
             setCities([]);
@@ -72,8 +98,9 @@ export default function GeoSelect({ onChange, initialLocation }) {
     const co = cos.find((x) => x.id === cId);
     const ro = rs.find((x) => x.id === rId);
     const ci = cis.find((x) => x.id === ciId);
+    const fallbackAreaId = ci?.id?.startsWith("fallback-") ? null : ci?.id;
     onChange && onChange({
-      geo_area_id: ci?.id || ro?.id || co?.id || null,
+      geo_area_id: fallbackAreaId || ro?.id || co?.id || null,
       country: co?.name || "",
       region: ro?.name || "",
       city: ci?.name || "",
@@ -98,8 +125,10 @@ export default function GeoSelect({ onChange, initialLocation }) {
     setError("");
     try {
       const cis = await loadAreas({ parent_id: v });
-      setCities(cis || []);
-      emit(country, v, null, countries, regions, cis || []);
+      const currentRegion = regions.find((item) => item.id === v);
+      const mergedCities = mergeFallbackCities(currentRegion?.name, cis || []);
+      setCities(mergedCities);
+      emit(country, v, null, countries, regions, mergedCities);
     } catch (loadError) {
       console.error("Shahar va tumanlarni yuklab bo‘lmadi.", loadError);
       setError(loadError?.message || "Shahar va tumanlarni yuklab bo‘lmadi.");

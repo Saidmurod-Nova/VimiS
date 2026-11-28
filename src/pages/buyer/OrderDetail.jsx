@@ -13,7 +13,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/vimi/States";
 import { PrimaryButton, SecondaryButton } from "@/components/vimi/VimiButton";
 import { useToast } from "@/components/ui/use-toast";
 import { formatSoM } from "@/lib/inventory";
-import { locationUrl } from "@/lib/maps";
+import { coordinatesNavigationUrl } from "@/lib/maps";
 
 const STEPS = [
   { key: "pending", label: "Buyurtma yaratildi", icon: Clock },
@@ -81,10 +81,9 @@ export default function BuyerOrderDetail() {
   const statusIndex = STEPS.findIndex((step) => step.key === order.status);
   const cancelled = order.status === "cancelled";
   const canCancel = order.status === "pending" || order.status === "accepted";
-  const deliveryMapUrl = locationUrl({
+  const deliveryMapUrl = coordinatesNavigationUrl({
     latitude: order.delivery_latitude,
     longitude: order.delivery_longitude,
-    address: order.delivery_address,
   });
 
   return (
@@ -143,9 +142,10 @@ export default function BuyerOrderDetail() {
             className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 text-sm font-medium text-secondary-foreground transition hover:bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <MapPin className="h-4 w-4" aria-hidden="true" />
-            Xaritada ochish
+            Yo‘nalish olish
             <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
           </a>}
+          {!deliveryMapUrl && <p className="mt-2 text-xs text-muted-foreground">Buyurtmada manzil koordinatasi yo‘q, yo‘nalishni ochib bo‘lmadi.</p>}
         </div>}
         {order.notes && <div><p className="text-xs text-muted-foreground">Izoh</p><p className="mt-1">{order.notes}</p></div>}
       </section>

@@ -4,7 +4,7 @@ import { isSupabaseMode, requireSupabase } from "@/lib/supabase";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
-export default function GeoSelect({ onChange }) {
+export default function GeoSelect({ onChange, initialLocation }) {
   const id = useId();
   const [countries, setCountries] = useState([]);
   const [regions, setRegions] = useState([]);
@@ -37,12 +37,26 @@ export default function GeoSelect({ onChange }) {
         if (!active) return;
         setCountries(list || []);
         if (list && list[0]) {
-          const c = list[0];
+          const countryName = initialLocation?.country?.trim().toLocaleLowerCase();
+          const c = list.find((item) => item.name.trim().toLocaleLowerCase() === countryName) || list[0];
           setCountry(c.id);
           const rs = await loadAreas({ parent_id: c.id });
           if (!active) return;
           setRegions(rs || []);
-          emit(c.id, null, null, [c], []);
+          const regionName = initialLocation?.region?.trim().toLocaleLowerCase();
+          const selectedRegion = rs?.find((item) => item.name.trim().toLocaleLowerCase() === regionName);
+          setRegion(selectedRegion?.id || null);
+          if (selectedRegion) {
+            const cis = await loadAreas({ parent_id: selectedRegion.id });
+            if (!active) return;
+            setCities(cis || []);
+            const cityName = initialLocation?.city?.trim().toLocaleLowerCase();
+            const selectedCity = cis?.find((item) => item.name.trim().toLocaleLowerCase() === cityName);
+            setCity(selectedCity?.id || null);
+          } else {
+            setCities([]);
+            setCity(null);
+          }
         }
       } catch (loadError) {
         console.error("Hududlarni yuklab bo‘lmadi.", loadError);
@@ -52,7 +66,7 @@ export default function GeoSelect({ onChange }) {
       }
     })();
     return () => { active = false; };
-  }, [reloadKey]);
+  }, [reloadKey, initialLocation?.country, initialLocation?.region, initialLocation?.city]);
 
   const emit = (cId, rId, ciId, cos = countries, rs = regions, cis = cities) => {
     const co = cos.find((x) => x.id === cId);

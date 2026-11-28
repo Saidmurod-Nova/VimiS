@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { isSupabaseMode } from "@/lib/supabase";
 import { getSellerOrder } from "@/lib/supabaseRelations";
 import { updateOrderStatusSupabase } from "@/lib/supabaseOrders";
-import { directionsUrl } from "@/lib/maps";
+import { coordinatesNavigationUrl } from "@/lib/maps";
 import PageHeader from "@/components/vimi/PageHeader";
 import OrderStatusBadge from "@/components/vimi/OrderStatusBadge";
 import Price from "@/components/vimi/Price";
@@ -72,13 +72,12 @@ export default function OrderDetail() {
 
   const { order, items, branch, courier } = data;
   const status = order.status;
-  const deliveryDirectionsUrl = directionsUrl(
-    branch || {},
+  const deliveryDirectionsUrl = coordinatesNavigationUrl(
     {
       latitude: order.delivery_latitude,
       longitude: order.delivery_longitude,
-      address: order.delivery_address,
     },
+    branch || {},
   );
 
   const steps = [
@@ -139,6 +138,9 @@ export default function OrderDetail() {
             <Navigation2 className="mr-1.5 h-4 w-4" />
             Google Xaritalarda yo'nalish olish
           </a>
+        )}
+        {order.delivery_address && !deliveryDirectionsUrl && (
+          <p className="text-xs text-muted-foreground">Buyurtmada manzil koordinatasi yo‘q, yo‘nalishni ochib bo‘lmadi.</p>
         )}
         {order.notes && <div className="rounded-xl bg-secondary p-2 text-xs text-muted-foreground">Izoh: {order.notes}</div>}
       </div>

@@ -19,6 +19,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useBusiness } from "@/lib/BusinessContext";
 import AppHeader from "./AppHeader";
+import VimiLogo from "./VimiLogo";
 
 const marketplaceNav = [
   { to: "/", label: "Bosh sahifa", icon: Home },
@@ -37,18 +38,20 @@ function isActive(pathname, to) {
   return pathname === to || (to !== "/" && to !== "/seller" && pathname.startsWith(to + "/"));
 }
 
-function NavItem({ to, label, icon: Icon, active, onNavigate }) {
+function NavItem({ to, label, icon: Icon, active, onNavigate, compact = false }) {
   return (
     <Link
       to={to}
       onClick={onNavigate}
+      title={compact ? label : undefined}
       className={cn(
         "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+        compact && "lg:w-11 lg:justify-center lg:px-0",
         active ? "bg-sidebar-accent text-[#d9e8a7]" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"
       )}
     >
-      <Icon className="w-5 h-5" aria-hidden="true" />
-      {label}
+      <Icon className="w-5 h-5 shrink-0" aria-hidden="true" />
+      <span className={compact ? "lg:hidden" : undefined}>{label}</span>
     </Link>
   );
 }
@@ -78,7 +81,7 @@ function MobileNavItem({ to, label, icon: Icon, active }) {
   );
 }
 
-function ModeSwitcher({ isSeller, hasBusiness, onNavigate }) {
+function ModeSwitcher({ isSeller, hasBusiness, onNavigate, compact = false }) {
   const navigate = useNavigate();
   const destination = isSeller ? "/" : hasBusiness ? "/seller" : "/seller/businesses/new";
   return (
@@ -88,12 +91,13 @@ function ModeSwitcher({ isSeller, hasBusiness, onNavigate }) {
         navigate(destination);
         onNavigate?.();
       }}
-      className="mt-auto flex items-center gap-3 rounded-xl border border-sidebar-border bg-sidebar-accent/50 px-3 py-3 text-left transition hover:bg-sidebar-accent active:scale-[0.99]"
+      title={compact ? (isSeller ? "Xaridorga o'tish" : hasBusiness ? "Biznes boshqaruvi" : "Biznes yaratish") : undefined}
+      className={cn("mt-auto flex items-center gap-3 rounded-xl border border-sidebar-border bg-sidebar-accent/50 px-3 py-3 text-left transition hover:bg-sidebar-accent active:scale-[0.99]", compact && "justify-center px-0")}
     >
       <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-accent text-[#d9e8a7]">
         <RefreshCw className="w-4 h-4" aria-hidden="true" />
       </span>
-      <span className="flex-1">
+      <span className={cn("flex-1", compact && "lg:hidden")}>
         <span className="block text-sm font-medium text-sidebar-foreground">
           {isSeller ? "Xaridorga o‘tish" : hasBusiness ? "Biznes boshqaruvi" : "Biznes yaratish"}
         </span>
@@ -162,21 +166,25 @@ export default function AppShell() {
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 flex-col border-r border-sidebar-border bg-sidebar px-4 py-5 text-sidebar-foreground transition-transform duration-200 lg:z-40 lg:w-64 lg:flex",
+          "fixed inset-y-0 left-0 z-50 w-72 flex-col border-r border-sidebar-border bg-sidebar px-4 py-5 text-sidebar-foreground transition-[width,transform,padding] duration-200 lg:inset-y-3 lg:left-3 lg:z-40 lg:flex lg:translate-x-0 lg:rounded-2xl lg:border lg:shadow-2xl lg:shadow-black/20",
           isMobileNavOpen ? "flex translate-x-0" : "hidden -translate-x-full",
-          isSidebarOpen ? "lg:translate-x-0" : "lg:-translate-x-full"
+          isSidebarOpen ? "lg:w-64 lg:px-4" : "lg:w-[76px] lg:px-3"
         )}
-        aria-hidden={!isMobileNavOpen && !isSidebarOpen}
-        inert={!isMobileNavOpen && !isSidebarOpen}
+        aria-label="Asosiy yon navigatsiya"
       >
         <div className="mb-6 flex items-center justify-between gap-3 px-2 py-2">
           <Link
             to={isSeller ? "/seller" : "/"}
-            className="min-w-0"
+            className={cn("min-w-0", !isSidebarOpen && "lg:flex lg:w-11 lg:justify-center")}
             onClick={() => setIsMobileNavOpen(false)}
           >
-            <span className="block truncate text-base font-semibold text-white">VireonSpes</span>
-            <span className="block text-[11px] text-sidebar-foreground/60">Marketplace &amp; Business</span>
+            <span className="flex items-center gap-2">
+              {!isSidebarOpen && <VimiLogo className="items-center" />}
+              <span className={cn("min-w-0", !isSidebarOpen && "lg:hidden")}>
+                <span className="block truncate text-base font-semibold text-white">VireonSpes</span>
+                <span className="block text-[11px] text-sidebar-foreground/60">Marketplace &amp; Business</span>
+              </span>
+            </span>
           </Link>
           <button
             type="button"
@@ -190,7 +198,7 @@ export default function AppShell() {
         <nav aria-label="Asosiy navigatsiya" className="flex-1 space-y-5 overflow-y-auto">
           {groups.map((group) => (
             <section key={group.label}>
-              <h2 className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/50">
+              <h2 className={cn("mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/50", !isSidebarOpen && "lg:hidden")}>
                 {group.label}
               </h2>
               <div className="flex flex-col gap-1">
@@ -200,6 +208,7 @@ export default function AppShell() {
                     {...item}
                     active={isActive(pathname, item.to)}
                     onNavigate={() => setIsMobileNavOpen(false)}
+                    compact={!isSidebarOpen}
                   />
                 ))}
               </div>
@@ -210,18 +219,19 @@ export default function AppShell() {
           isSeller={isSeller}
           hasBusiness={hasBusiness}
           onNavigate={() => setIsMobileNavOpen(false)}
+          compact={!isSidebarOpen}
         />
       </aside>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 lg:hidden">
-        <div className="mx-auto flex max-w-md items-center justify-around rounded-full border border-border bg-card/95 px-2 py-1.5 shadow-lg shadow-black/5 backdrop-blur">
+        <div className="liquid-bottom-nav mx-auto flex max-w-md items-center justify-around rounded-full px-2 py-1.5 text-sidebar-foreground">
           {mobileNav.map((item) => (
             <MobileNavItem key={item.to} {...item} active={isActive(pathname, item.to)} />
           ))}
         </div>
       </nav>
 
-      <main className={cn("transition-[padding] duration-200", isSidebarOpen ? "lg:pl-64" : "lg:pl-0")}>
+      <main className={cn("transition-[padding] duration-200", isSidebarOpen ? "lg:pl-[276px]" : "lg:pl-[100px]")}>
         <AppHeader
           isSeller={isSeller}
           isSidebarOpen={isSidebarOpen}

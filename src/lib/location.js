@@ -25,8 +25,10 @@ export async function detectNearestLocation(coords) {
   let best = null;
   let bestD = Infinity;
   for (const b of (branches || [])) {
-    if (!b.latitude || !b.longitude) continue;
-    const d = haversineKm(coords, { lat: b.latitude, lng: b.longitude });
+    const lat = Number(b.latitude);
+    const lng = Number(b.longitude);
+    if (b.latitude == null || b.longitude == null || String(b.latitude).trim() === "" || String(b.longitude).trim() === "" || !Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) continue;
+    const d = haversineKm(coords, { lat, lng });
     if (d < bestD) { bestD = d; best = b; }
   }
   if (!best) return null;
@@ -62,10 +64,22 @@ export function getCurrentPosition() {
       reject(new Error("Bu qurilma yoki brauzer joylashuvni aniqlashni qo‘llab-quvvatlamaydi."));
       return;
     }
+    // High accuracy can time out on phones when GPS is unavailable indoors.
+    // Retry with network/cached positioning before reporting a failure.
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      (error) => reject(geolocationError(error)),
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+      (highAccuracyError) => {
+        if (highAccuracyError?.code === 1) {
+          reject(geolocationError(highAccuracyError));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          (fallbackError) => reject(geolocationError(fallbackError?.code === 1 ? fallbackError : highAccuracyError)),
+          { enableHighAccuracy: false, timeout: 20000, maximumAge: 120000 }
+        );
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
   });
 }

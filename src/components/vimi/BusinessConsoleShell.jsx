@@ -17,19 +17,21 @@ import VimiLogo from "@/components/vimi/VimiLogo";
 import { useBusiness } from "@/lib/BusinessContext";
 import { cn } from "@/lib/utils";
 
-function ConsoleLink({ to, label, icon: Icon, end, onClick }) {
+function ConsoleLink({ to, label, icon: Icon, end, onClick, compact = false }) {
   return (
     <NavLink
       to={to}
       end={end}
       onClick={onClick}
+      title={compact ? label : undefined}
       className={({ isActive }) => cn(
         "console-nav-link flex min-h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition",
+        compact && "lg:w-10 lg:justify-center lg:px-0",
         isActive ? "bg-sidebar-accent text-sidebar-primary" : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
       )}
     >
       <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-      {label}
+      <span className={compact ? "lg:hidden" : undefined}>{label}</span>
     </NavLink>
   );
 }
@@ -39,7 +41,7 @@ function BusinessBottomTabNav({ items }) {
 
   return (
     <nav aria-label="Biznes mobil navigatsiyasi" className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 lg:hidden">
-      <div className="mx-auto flex max-w-xl items-stretch justify-around rounded-full border border-border bg-card/95 px-2 py-1.5 shadow-lg shadow-black/5 backdrop-blur">
+      <div className="liquid-bottom-nav mx-auto flex max-w-xl items-stretch justify-around rounded-full px-2 py-1.5 text-sidebar-foreground">
         {items.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
@@ -122,16 +124,14 @@ export default function BusinessConsoleShell() {
       )}
       <aside
         className={cn(
-          "liquid-aside business-console-sidebar fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col border-r px-3 py-4 text-sidebar-foreground transition-transform duration-200 lg:z-30",
+          "liquid-aside business-console-sidebar fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col border-r px-3 py-4 text-sidebar-foreground transition-[width,transform,padding] duration-200 lg:inset-y-3 lg:left-3 lg:z-30 lg:translate-x-0 lg:rounded-2xl",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
-          desktopSidebarOpen ? "lg:translate-x-0" : "lg:-translate-x-full"
+          desktopSidebarOpen ? "lg:w-[272px]" : "lg:w-[76px]"
         )}
         aria-label="Biznes ish maydoni navigatsiyasi"
-        aria-hidden={!sidebarOpen && !desktopSidebarOpen}
-        inert={!sidebarOpen && !desktopSidebarOpen}
       >
         <div className="flex items-center justify-between border-b border-white/10 px-2 pb-4">
-          <Link to={base} className="min-w-0" onClick={() => setSidebarOpen(false)}>
+          <Link to={base} className={cn("min-w-0", !desktopSidebarOpen && "lg:hidden")} onClick={() => setSidebarOpen(false)}>
             <VimiLogo />
             <span className="mt-1 block text-[11px] text-sidebar-foreground/60">Biznes ish maydoni</span>
           </Link>
@@ -145,13 +145,13 @@ export default function BusinessConsoleShell() {
           </button>
         </div>
 
-        <div className="business-brand-card mt-4 flex min-w-0 items-center gap-3 rounded-xl border p-3">
+        <div className={cn("business-brand-card mt-4 flex min-w-0 items-center gap-3 rounded-xl border p-3", !desktopSidebarOpen && "lg:justify-center lg:px-0")}>
           <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-sidebar-accent">
             {selectedBusiness.logo_url
               ? <img src={selectedBusiness.logo_url} alt="" className="h-full w-full object-cover" />
               : <Store className="h-4 w-4 text-sidebar-foreground/70" aria-hidden="true" />}
           </span>
-          <span className="min-w-0">
+          <span className={cn("min-w-0", !desktopSidebarOpen && "lg:hidden")}>
             <span className="block truncate text-sm font-semibold">{selectedBusiness.name}</span>
             <span className="block truncate text-xs text-sidebar-foreground/60">
               {selectedBusiness.category_name || selectedBusiness.store_id}
@@ -160,25 +160,26 @@ export default function BusinessConsoleShell() {
         </div>
 
         <nav aria-label="Biznes modullari" className="mt-5 flex-1 space-y-1 overflow-y-auto">
-          <h2 className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/50">
+          <h2 className={cn("px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/50", !desktopSidebarOpen && "lg:hidden")}>
             Ish maydoni
           </h2>
           {consoleItems.map((item) => (
-            <ConsoleLink key={item.to} {...item} onClick={() => setSidebarOpen(false)} />
+            <ConsoleLink key={item.to} {...item} compact={!desktopSidebarOpen} onClick={() => setSidebarOpen(false)} />
           ))}
         </nav>
 
         <Link
           to="/business"
           onClick={() => setSidebarOpen(false)}
-          className="business-sidebar-action mt-4 flex min-h-10 items-center gap-3 rounded-xl border px-3 text-sm font-medium text-sidebar-foreground/75 transition hover:text-sidebar-foreground"
+          className={cn("business-sidebar-action mt-4 flex min-h-10 items-center gap-3 rounded-xl border px-3 text-sm font-medium text-sidebar-foreground/75 transition hover:text-sidebar-foreground", !desktopSidebarOpen && "lg:justify-center lg:px-0")}
+          title={!desktopSidebarOpen ? "Bizneslarim" : undefined}
         >
           <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
-          Bizneslarim
+          <span className={desktopSidebarOpen ? undefined : "lg:hidden"}>Bizneslarim</span>
         </Link>
       </aside>
 
-      <div className={cn("min-h-screen transition-[padding] duration-200", desktopSidebarOpen ? "lg:pl-[272px]" : "lg:pl-0")}>
+      <div className={cn("min-h-screen transition-[padding] duration-200", desktopSidebarOpen ? "lg:pl-[284px]" : "lg:pl-[88px]")}>
         <AppHeader
           isSeller
           isSidebarOpen={desktopSidebarOpen}

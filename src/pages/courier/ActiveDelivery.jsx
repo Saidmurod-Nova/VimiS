@@ -15,7 +15,7 @@ import {
 import { useCourierDemo } from "@/lib/CourierDemoContext";
 import { formatUZS } from "@/lib/courierDemo";
 import { PageHeading, StatusPill } from "@/components/courier/CourierUI";
-import { navigationUrl } from "@/lib/maps";
+import { coordinatesNavigationUrl } from "@/lib/maps";
 
 const confirmCopy = {
   available: {
@@ -88,8 +88,8 @@ export default function ActiveDelivery() {
     latitude: delivery.destinationLatitude,
     longitude: delivery.destinationLongitude,
   };
-  const pickupMapUrl = navigationUrl(storeLocation);
-  const destinationMapUrl = navigationUrl(customerLocation);
+  const pickupMapUrl = coordinatesNavigationUrl(storeLocation);
+  const destinationMapUrl = coordinatesNavigationUrl(customerLocation);
 
   const confirmStatusAction = () => {
     if (delivery.status === "available") acceptDelivery(delivery.id);
@@ -168,7 +168,7 @@ export default function ActiveDelivery() {
                   <Navigation className="h-4 w-4" aria-hidden="true" />Mijozga yo‘nalish<ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                 </a>
               ) : (
-                <p className="mt-3 text-sm text-muted-foreground">Manzil xaritada topilmadi. Buyurtmadagi manzilni aniqlashtiring.</p>
+                <p className="mt-3 text-sm text-muted-foreground">Buyurtmada manzil koordinatasi yo‘q, yo‘nalishni ochib bo‘lmadi.</p>
               )}
             </div>
           </div>

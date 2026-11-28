@@ -206,6 +206,10 @@ export default function Store() {
                       name={item.name}
                       price={item.effective_price}
                       image={item.image_url}
+                      category={item.category_name || null}
+                      storeName={business?.name || null}
+                      location={selectedBranch?.name || null}
+                      description={item.description || null}
                       onClick={() => navigate(`/branch/${selectedBranchId}/products/${item.product_id}`)}
                       availability={<AvailabilityBadge available={item.available} disabled={item.disabled} hasInventory={item.has_inventory} className="text-xs" />}
                     />

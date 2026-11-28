@@ -161,7 +161,7 @@ export default function MarketplaceShell() {
         <Outlet />
       </main>
       <nav aria-label="Marketplace mobil navigatsiyasi" className="fixed inset-x-0 bottom-0 z-20 px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 lg:hidden">
-        <div className="mx-auto flex max-w-xl items-stretch justify-around rounded-full border border-border bg-card/95 px-2 py-1.5 shadow-lg shadow-black/5 backdrop-blur">
+        <div className="liquid-bottom-nav mx-auto flex max-w-xl items-stretch justify-around rounded-full px-2 py-1.5 text-sidebar-foreground">
           {[navigation[0], navigation[1], navigation[3], navigation[4]].map((item) => (
             <NavigationLink key={item.to} item={item} mobile />
           ))}

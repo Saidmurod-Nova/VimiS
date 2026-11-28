@@ -202,7 +202,7 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {products.map((p) => (
-              <ProductCard key={p.id} name={p.name} price={p.price} image={p.image_url} onClick={() => navigate(`/product/${p.id}`)} />
+              <ProductCard key={p.id} name={p.name} price={p.price} image={p.image_url} category={p.category_name || null} description={p.description || null} onClick={() => navigate(`/product/${p.id}`)} />
             ))}
           </div>
         )}

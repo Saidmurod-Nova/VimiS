@@ -12,6 +12,7 @@ import { base44 } from "@/api/base44Client";
 import { isSupabaseMode } from "@/lib/supabase";
 import { checkoutSupabase } from "@/lib/supabaseOrders";
 import { listAddresses } from "@/lib/supabaseRelations";
+import { hasValidCoordinates } from "@/lib/maps";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ export default function Checkout() {
   const [selectedAddr, setSelectedAddr] = useState(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const selectedAddress = addresses?.find((address) => address.id === selectedAddr);
 
   const loadAddresses = async () => {
     setAddrLoading(true); setAddrError("");
@@ -53,6 +55,13 @@ export default function Checkout() {
   const placeOrder = async () => {
     if (!cart) { toast({ title: "Savat bo'sh", variant: "destructive" }); return; }
     if (!selectedAddr) { toast({ title: "Manzilni tanlang", variant: "destructive" }); return; }
+    if (!hasValidCoordinates(selectedAddress)) {
+      toast({ title: "Yo‘nalish uchun manzil koordinatasini belgilang", variant: "destructive" });
+      if (selectedAddress) {
+        navigate(`/addresses/${selectedAddress.id}/edit`, { state: { returnTo: "/checkout" } });
+      }
+      return;
+    }
     if (submitting) return;
     setSubmitting(true);
     try {
@@ -128,6 +137,18 @@ export default function Checkout() {
                 </span>
               </button>
             ))}
+            {selectedAddress && !hasValidCoordinates(selectedAddress) && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+                <p className="text-sm text-foreground">Yo‘nalish koordinata orqali ochilishi uchun xaritada manzil nuqtasini belgilang.</p>
+                <GhostButton
+                  type="button"
+                  onClick={() => navigate(`/addresses/${selectedAddress.id}/edit`, { state: { returnTo: "/checkout" } })}
+                  className="mt-2 h-9 px-2 text-xs"
+                >
+                  Xaritada nuqtani belgilash
+                </GhostButton>
+              </div>
+            )}
             <GhostButton type="button" onClick={() => navigate("/addresses")} className="h-10 w-full gap-1 text-xs">Boshqa manzilni tanlash / tahrirlash</GhostButton>
           </div>
         )}

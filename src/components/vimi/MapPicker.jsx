@@ -102,7 +102,7 @@ export default function MapPicker({ value, onChange }) {
         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
         <p>{pos
           ? `Nuqta tanlandi: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}. Aniqligini tekshirish uchun belgini suring.`
-          : "Xaritadagi manzil nuqtasini bosing yoki belgini joylashuv aniqlangandan keyin suring. Nuqta tanlash ixtiyoriy."}</p>
+            : "Xaritadagi manzil nuqtasini bosing yoki joylashuvni aniqlab, belgini kerakli joyga suring."}</p>
       </div>
     </div>
   );

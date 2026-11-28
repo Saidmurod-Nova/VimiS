@@ -23,7 +23,7 @@ export default function AddressEdit() {
   const [address, setAddress] = useState("");
   const [coords, setCoords] = useState(null);
   const [isDefault, setIsDefault] = useState(false);
-  const [showMap, setShowMap] = useState(false);
+  const [showMap, setShowMap] = useState(!id);
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
 
@@ -37,7 +37,7 @@ export default function AddressEdit() {
         setAddress(a.address || "");
         setCoords(a.latitude != null && a.longitude != null ? { lat: a.latitude, lng: a.longitude } : null);
         setIsDefault(!!a.is_default);
-        if (a.latitude != null && a.longitude != null) setShowMap(true);
+        setShowMap(true);
       } catch (e) {
         toast({ title: e?.response?.data?.error || "Manzil topilmadi", variant: "destructive" });
         navigate("/addresses");
@@ -52,6 +52,11 @@ export default function AddressEdit() {
     const t = title.trim();
     const a = address.trim();
     if (!t || !a) { toast({ title: "Sarlavha va manzil majburiy", variant: "destructive" }); return; }
+    if (!coords) {
+      toast({ title: "Xaritada manzil nuqtasini tanlang", variant: "destructive" });
+      setShowMap(true);
+      return;
+    }
     let lat = null, lng = null;
     if (coords) {
       lat = Number(coords.lat);
@@ -141,7 +146,7 @@ export default function AddressEdit() {
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="font-display font-semibold">Xaritadagi nuqta</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Ixtiyoriy. Nuqta kuryerga manzilni aniqroq topishga yordam beradi.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Yo‘nalish xaritada aynan shu koordinata bo‘yicha ochiladi. Nuqtani belgilang.</p>
               {coords && (
                 <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
                   <MapPin className="h-3.5 w-3.5" aria-hidden="true" />

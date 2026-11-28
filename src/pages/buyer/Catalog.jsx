@@ -148,6 +148,9 @@ export default function Catalog() {
               name={product.name}
               price={product.price}
               image={product.image_url}
+              category={product.category_name || businessMap.get(product.business_id)?.category_name || null}
+              storeName={businessMap.get(product.business_id)?.name || null}
+              description={product.description || null}
               onClick={() => navigate(`/product/${product.id}`)}
               onAdd={null}
               availability={null}

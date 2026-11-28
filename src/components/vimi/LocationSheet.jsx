@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { LocateFixed, Loader2 } from "lucide-react";
 import BottomSheet from "./BottomSheet";
 import GeoSelect from "./GeoSelect";
@@ -14,10 +14,16 @@ export default function LocationSheet({ open, onOpenChange }) {
   const { toast } = useToast();
   const [detecting, setDetecting] = useState(false);
   const [detectError, setDetectError] = useState("");
+  const [detectedLocation, setDetectedLocation] = useState(null);
+
+  useEffect(() => {
+    if (!open) setDetectedLocation(null);
+  }, [open]);
 
   const handleDetect = async () => {
     setDetecting(true);
     setDetectError("");
+    setDetectedLocation(null);
     try {
       const coords = await getCurrentPosition();
       const loc = await detectNearestLocation(coords);
@@ -25,9 +31,9 @@ export default function LocationSheet({ open, onOpenChange }) {
         setDetectError("Koordinata olindi, ammo unga mos faol filial topilmadi. Hududni qo‘lda tanlang.");
         return;
       }
+      setDetectedLocation(loc);
       await setLocation(loc);
       toast({ title: "Joylashuv aniqlandi", description: [loc.city, loc.region].filter(Boolean).join(", ") });
-      onOpenChange?.(false);
     } catch (e) {
       setDetectError(e?.message || "Joylashuvni aniqlab bo‘lmadi. Hududni qo‘lda tanlang.");
     } finally {
@@ -50,16 +56,17 @@ export default function LocationSheet({ open, onOpenChange }) {
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="mb-3 text-xs text-muted-foreground">Yoki qo'lda tanlang</p>
           <GeoSelect onChange={async (loc) => {
+            if (!loc.region || !loc.city) return;
             try {
               await setLocation(loc);
               onOpenChange?.(false);
             } catch (error) {
               toast({ title: error?.message || "Joylashuvni saqlab bo‘lmadi", variant: "destructive" });
             }
-          }} />
+          }} initialLocation={detectedLocation || selectedLocation} />
         </div>
         {selectedLocation && (
-          <SecondaryButton type="button" className="h-12 w-full" onClick={() => { setLocation(null); onOpenChange?.(false); }}>
+          <SecondaryButton type="button" className="h-12 w-full" onClick={() => { setDetectedLocation(null); setLocation(null); onOpenChange?.(false); }}>
             Joylashuvni tozalash
           </SecondaryButton>
         )}

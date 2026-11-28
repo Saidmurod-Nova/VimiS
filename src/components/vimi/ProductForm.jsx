@@ -47,20 +47,42 @@ export default function ProductForm({ businessId, initial, onSubmit, submitLabel
   return (
     <div className="animate-fade-in space-y-6">
       <PageHeader title={submitLabel} backTo={backTo} />
-      <form onSubmit={submit} className="space-y-4">
-        <div className="space-y-2"><Label>Mahsulot rasmi</Label><ProductImageUpload value={imageUrl} onChange={setImageUrl} /></div>
-        <div className="space-y-2"><Label>Mahsulot nomi</Label><TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Masalan: iPhone 17 Pro" autoFocus required /></div>
-        <div className="space-y-2"><Label>Tavsif</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Mahsulot haqida qisqacha" rows={3} className="rounded-xl" /></div>
-        <ProductCategorySelect businessId={businessId} value={categoryId} onChange={setCategoryId} />
-        <div className="space-y-2">
-          <Label>Narx (so'm)</Label>
-          <Input type="number" min="0" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" className="h-12 rounded-xl" required />
-          {previewPrice !== null && <div className="text-sm text-muted-foreground">Ko'rinish: <Price value={previewPrice} size="sm" className="inline-flex" /></div>}
+      <form
+        onSubmit={submit}
+        className="grid gap-5 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5 md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)] lg:p-6"
+      >
+        <div className="space-y-2 md:self-start">
+          <Label>Mahsulot rasmi</Label>
+          <ProductImageUpload value={imageUrl} onChange={setImageUrl} />
         </div>
-        {error && <div className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-        <PrimaryButton type="submit" className="h-12 w-full" disabled={loading}>
-          {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saqlanmoqda...</> : submitLabel}
-        </PrimaryButton>
+
+        <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
+          <div className="space-y-2">
+            <Label>Mahsulot nomi</Label>
+            <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Masalan: iPhone 17 Pro" autoFocus required />
+          </div>
+
+          <ProductCategorySelect businessId={businessId} value={categoryId} onChange={setCategoryId} />
+
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Tavsif</Label>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Mahsulot haqida qisqacha" rows={4} className="rounded-xl" />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Narx (so'm)</Label>
+            <Input type="number" min="0" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" className="h-12 rounded-xl" required />
+            {previewPrice !== null && <div className="text-sm text-muted-foreground">Ko'rinish: <Price value={previewPrice} size="sm" className="inline-flex" /></div>}
+          </div>
+
+          {error && <div className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive sm:col-span-2">{error}</div>}
+
+          <div className="sm:col-span-2 sm:flex sm:justify-end">
+            <PrimaryButton type="submit" className="h-12 w-full sm:w-auto sm:min-w-40" disabled={loading}>
+              {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saqlanmoqda...</> : submitLabel}
+            </PrimaryButton>
+          </div>
+        </div>
       </form>
     </div>
   );
